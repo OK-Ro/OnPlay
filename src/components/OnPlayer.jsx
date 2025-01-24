@@ -14,6 +14,11 @@ import {
   Filter,
   Rewind,
   FastForward,
+  Cast,
+  Airplay,
+  Settings,
+  List,
+  Heart,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -80,6 +85,7 @@ export default function OnPlayer() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isCasting, setIsCasting] = useState(false); // Casting state
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -247,6 +253,18 @@ export default function OnPlayer() {
     }
   };
 
+  const toggleCast = () => {
+    // Implement casting logic here (e.g., using Google Cast SDK)
+    setIsCasting(!isCasting);
+    console.log("Casting to device...");
+  };
+
+  const toggleAirPlay = () => {
+    if (videoRef.current && videoRef.current.webkitShowPlaybackTargetPicker) {
+      videoRef.current.webkitShowPlaybackTargetPicker();
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -359,6 +377,8 @@ export default function OnPlayer() {
                 controls={false}
                 onTimeUpdate={handleTimeUpdate}
                 autoPlay
+                playsInline // Enable inline playback on iOS
+                webkit-playsinline // Enable inline playback on older iOS
               />
               <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
                 <Image
@@ -446,6 +466,18 @@ export default function OnPlayer() {
                     className="p-2 hover:bg-white/10 rounded-full transition-colors"
                   >
                     <Maximize2 className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={toggleCast}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Cast className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={toggleAirPlay}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Airplay className="w-6 h-6" />
                   </button>
                 </div>
               </div>
