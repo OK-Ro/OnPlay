@@ -9,7 +9,6 @@ import {
   Search,
   Star,
   StarOff,
-  PictureInPicture,
   ChevronDown,
   Filter,
   Rewind,
@@ -81,9 +80,15 @@ export default function OnPlayer() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isCasting, setIsCasting] = useState(false); // Casting state
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+
+  // Check if AirPlay is supported
+  const isAirPlaySupported = useMemo(() => {
+    return (
+      typeof videoRef.current?.webkitShowPlaybackTargetPicker === "function"
+    );
+  }, []); // Removed videoRef.current from dependency array
 
   useEffect(() => {
     const sampleChannels = [
@@ -208,18 +213,6 @@ export default function OnPlayer() {
     );
   };
 
-  const togglePiP = async () => {
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else if (videoRef.current) {
-        await videoRef.current.requestPictureInPicture();
-      }
-    } catch (error) {
-      console.error("PiP failed:", error);
-    }
-  };
-
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
@@ -251,12 +244,6 @@ export default function OnPlayer() {
     if (videoRef.current) {
       videoRef.current.currentTime += 10;
     }
-  };
-
-  const toggleCast = () => {
-    // Implement casting logic here (e.g., using Google Cast SDK)
-    setIsCasting(!isCasting);
-    console.log("Casting to device...");
   };
 
   const toggleAirPlay = async () => {
@@ -381,6 +368,7 @@ export default function OnPlayer() {
                 controls={false}
                 onTimeUpdate={handleTimeUpdate}
                 autoPlay
+                playsInline // Required for mobile Safari
               />
               <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
                 <Image
@@ -397,6 +385,24 @@ export default function OnPlayer() {
                   </p>
                 </div>
               </div>
+
+              {/* AirPlay and Fullscreen Icons */}
+              <div className="absolute top-4 right-4 flex space-x-2">
+                {isAirPlaySupported && (
+                  <button
+                    onClick={toggleAirPlay}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Cast className="w-6 h-6" />
+                  </button>
+                )}
+                <button
+                  onClick={toggleFullscreen}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <Maximize2 className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
@@ -408,105 +414,69 @@ export default function OnPlayer() {
               </p>
             </div>
           )}
+        </div>
 
-          {/* Floating Controls */}
-          {currentChannel && (
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={togglePlay}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-6 h-6" />
-                    ) : (
-                      <Play className="w-6 h-6" />
-                    )}
-                  </button>
-                  <button
-                    onClick={rewind}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <Rewind className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={fastForward}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <FastForward className="w-6 h-6" />
-                  </button>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={toggleMute}
-                      className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                    >
-                      {isMuted ? (
-                        <VolumeX className="w-6 h-6" />
-                      ) : (
-                        <Volume2 className="w-6 h-6" />
-                      )}
-                    </button>
-                    <Slider
-                      value={[volume]}
-                      max={1}
-                      step={0.1}
-                      onValueChange={handleVolumeChange}
-                      className="w-24"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={togglePiP}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <PictureInPicture className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={toggleFullscreen}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <Maximize2 className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={toggleAirPlay}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <Cast className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
+        {/* Controls Below the Video Player */}
+        {currentChannel && (
+          <div className="bg-black/60 backdrop-blur-md p-4">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
-                <span className="text-sm">{formatTime(currentTime)}</span>
-                <Slider
-                  value={[currentTime]}
-                  max={duration}
-                  step={1}
-                  onValueChange={handleSeek}
-                  className="flex-1"
-                />
-                <span className="text-sm">{formatTime(duration)}</span>
+                <button
+                  onClick={togglePlay}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-6 h-6" />
+                  ) : (
+                    <Play className="w-6 h-6" />
+                  )}
+                </button>
+                <button
+                  onClick={rewind}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <Rewind className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={fastForward}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <FastForward className="w-6 h-6" />
+                </button>
               </div>
-              <div className="flex items-center mt-4">
-                <div className="w-12 h-12 relative mr-3">
-                  <Image
-                    src={currentChannel.logo || "/placeholder.svg"}
-                    alt={currentChannel.name}
-                    fill
-                    className="object-contain rounded-md"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-medium text-lg">{currentChannel.name}</h3>
-                  <p className="text-sm text-gray-400">
-                    {currentChannel.group}
-                  </p>
-                </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={toggleMute}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-6 h-6" />
+                  ) : (
+                    <Volume2 className="w-6 h-6" />
+                  )}
+                </button>
+                <Slider
+                  value={[volume]}
+                  max={1}
+                  step={0.1}
+                  onValueChange={handleVolumeChange}
+                  className="w-24"
+                />
               </div>
             </div>
-          )}
-        </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm">{formatTime(currentTime)}</span>
+              <Slider
+                value={[currentTime]}
+                max={duration}
+                step={1}
+                onValueChange={handleSeek}
+                className="flex-1"
+              />
+              <span className="text-sm">{formatTime(duration)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile Toggle Sidebar Button */}
