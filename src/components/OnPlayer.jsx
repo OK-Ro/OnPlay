@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import Hls from "hls.js"; // Import hls.js
 import {
   Play,
   Pause,
@@ -79,8 +80,8 @@ export default function OnPlayer() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const videoRef = React.useRef(null);
-  const containerRef = React.useRef(null);
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const sampleChannels = [
@@ -140,8 +141,22 @@ export default function OnPlayer() {
   const handleChannelSelect = (channel) => {
     setCurrentChannel(channel);
     if (videoRef.current) {
-      videoRef.current.src = channel.url;
-      setIsPlaying(false);
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(channel.url);
+        hls.attachMedia(videoRef.current);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoRef.current.play();
+        });
+      } else if (
+        videoRef.current.canPlayType("application/vnd.apple.mpegurl")
+      ) {
+        videoRef.current.src = channel.url;
+        videoRef.current.play();
+      } else {
+        console.error("HLS is not supported in this browser.");
+      }
+      setIsPlaying(true);
     }
   };
 
@@ -343,10 +358,8 @@ export default function OnPlayer() {
                 className="w-full h-full object-contain"
                 controls={false}
                 onTimeUpdate={handleTimeUpdate}
-              >
-                <source src={currentChannel.url} type="application/x-mpegURL" />
-                Your browser does not support HLS video playback.
-              </video>
+                autoPlay
+              />
               <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
                 <Image
                   src={currentChannel.logo || "/placeholder.svg"}
