@@ -144,7 +144,11 @@ export default function OnPlayer() {
     setCurrentChannel(channel);
     if (videoRef.current) {
       if (Hls.isSupported()) {
-        const hls = new Hls();
+        const hls = new Hls({
+          maxBufferLength: 30,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxMaxBufferLength: 600,
+        });
         hls.loadSource(channel.url);
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -253,6 +257,16 @@ export default function OnPlayer() {
     // Implement casting logic here (e.g., using Google Cast SDK)
     setIsCasting(!isCasting);
     console.log("Casting to device...");
+  };
+
+  const toggleAirPlay = async () => {
+    if (videoRef.current && videoRef.current.webkitShowPlaybackTargetPicker) {
+      try {
+        await videoRef.current.webkitShowPlaybackTargetPicker();
+      } catch (error) {
+        console.error("AirPlay failed:", error);
+      }
+    }
   };
 
   return (
@@ -456,7 +470,7 @@ export default function OnPlayer() {
                     <Maximize2 className="w-6 h-6" />
                   </button>
                   <button
-                    onClick={toggleCast}
+                    onClick={toggleAirPlay}
                     className="p-2 hover:bg-white/10 rounded-full transition-colors"
                   >
                     <Cast className="w-6 h-6" />
