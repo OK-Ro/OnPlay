@@ -13,7 +13,8 @@ import {
   Filter,
   Rewind,
   FastForward,
-  Cast,
+  Cast, // Cast icon from lucide-react
+  PictureInPicture, // PiP icon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,7 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const Image = ({ src, alt, width, height, className, fill }) => {
   return (
     <img
-      src={src}
+      src={src || "/placeholder.svg"}
       alt={alt}
       width={width}
       height={height}
@@ -41,7 +42,7 @@ const Slider = ({ value, max, step, onValueChange, className }) => {
       value={value}
       max={max}
       step={step}
-      onChange={(e) => onValueChange([parseFloat(e.target.value)])}
+      onChange={(e) => onValueChange([Number.parseFloat(e.target.value)])}
       className={className}
     />
   );
@@ -80,6 +81,7 @@ export default function OnPlayer() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showDevices, setShowDevices] = useState(false); // State to show available devices
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -88,7 +90,12 @@ export default function OnPlayer() {
     return (
       typeof videoRef.current?.webkitShowPlaybackTargetPicker === "function"
     );
-  }, []); // Removed videoRef.current from dependency array
+  }, []);
+
+  // Check if Picture-in-Picture is supported
+  const isPiPSupported = useMemo(() => {
+    return "pictureInPictureEnabled" in document;
+  }, []);
 
   useEffect(() => {
     const sampleChannels = [
@@ -213,18 +220,22 @@ export default function OnPlayer() {
     );
   };
 
+  const togglePiP = async () => {
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (videoRef.current) {
+        await videoRef.current.requestPictureInPicture();
+      }
+    } catch (error) {
+      console.error("PiP failed:", error);
+    }
+  };
+
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
       setDuration(videoRef.current.duration);
-    }
-  };
-
-  const handleSeek = (value) => {
-    const newTime = value[0];
-    setCurrentTime(newTime);
-    if (videoRef.current) {
-      videoRef.current.currentTime = newTime;
     }
   };
 
@@ -246,12 +257,13 @@ export default function OnPlayer() {
     }
   };
 
-  const toggleAirPlay = async () => {
+  const toggleCast = async () => {
     if (videoRef.current && videoRef.current.webkitShowPlaybackTargetPicker) {
       try {
-        await videoRef.current.webkitShowPlaybackTargetPicker();
+        await videoRef.current.webkitShowPlaybackTargetPicker(); // Show AirPlay devices
+        setShowDevices(true); // Show available devices
       } catch (error) {
-        console.error("AirPlay failed:", error);
+        console.error("Casting failed:", error);
       }
     }
   };
@@ -386,14 +398,27 @@ export default function OnPlayer() {
                 </div>
               </div>
 
-              {/* AirPlay and Fullscreen Icons */}
+              {/* Cast, PiP, and Fullscreen Icons */}
               <div className="absolute top-4 right-4 flex space-x-2">
                 {isAirPlaySupported && (
                   <button
-                    onClick={toggleAirPlay}
+                    onClick={toggleCast}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors relative"
+                  >
+                    <Cast className="w-6 h-6" /> {/* Cast icon */}
+                    {showDevices && (
+                      <div className="absolute top-10 right-0 bg-black/80 backdrop-blur-sm p-2 rounded-lg text-sm">
+                        Available Devices
+                      </div>
+                    )}
+                  </button>
+                )}
+                {isPiPSupported && (
+                  <button
+                    onClick={togglePiP}
                     className="p-2 hover:bg-white/10 rounded-full transition-colors"
                   >
-                    <Cast className="w-6 h-6" />
+                    <PictureInPicture className="w-6 h-6" />
                   </button>
                 )}
                 <button
@@ -470,7 +495,11 @@ export default function OnPlayer() {
                 value={[currentTime]}
                 max={duration}
                 step={1}
-                onValueChange={handleSeek}
+                onValueChange={(value) => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = value[0];
+                  }
+                }}
                 className="flex-1"
               />
               <span className="text-sm">{formatTime(duration)}</span>
