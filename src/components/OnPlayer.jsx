@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import Hls from "hls.js"; // Import hls.js
+import Hls from "hls.js";
 import {
   Play,
   Pause,
@@ -9,14 +9,13 @@ import {
   Search,
   Star,
   StarOff,
-  ChevronDown,
-  Filter,
   Rewind,
   FastForward,
-  Cast, // Cast icon from lucide-react
-  PictureInPicture, // PiP icon
+  Menu,
 } from "lucide-react";
+import { MdCast } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
+import { debounce } from "lodash";
 
 // Custom Image Component (replaces next/image)
 const Image = ({ src, alt, width, height, className, fill }) => {
@@ -34,123 +33,107 @@ const Image = ({ src, alt, width, height, className, fill }) => {
   );
 };
 
-// Custom Slider Component
-const Slider = ({ value, max, step, onValueChange, className }) => {
-  return (
-    <input
-      type="range"
-      value={value}
-      max={max}
-      step={step}
-      onChange={(e) => onValueChange([Number.parseFloat(e.target.value)])}
-      className={className}
-    />
-  );
-};
-
-// Custom DropdownMenu Components
-const DropdownMenu = ({ children }) => {
-  return <div className="dropdown-menu">{children}</div>;
-};
-
-const DropdownMenuTrigger = ({ children }) => {
-  return <div className="dropdown-trigger">{children}</div>;
-};
-
-const DropdownMenuContent = ({ children, className }) => {
-  return <div className={`dropdown-content ${className}`}>{children}</div>;
-};
-
-const DropdownMenuItem = ({ children, onClick }) => {
-  return (
-    <div className="dropdown-item" onClick={onClick}>
-      {children}
-    </div>
-  );
-};
-
 export default function OnPlayer() {
   const [channels, setChannels] = useState([]);
   const [currentChannel, setCurrentChannel] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [favorites, setFavorites] = useState([]);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [showDevices, setShowDevices] = useState(false); // State to show available devices
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showDevices, setShowDevices] = useState(false);
+  const [availableDevices, setAvailableDevices] = useState([]);
   const videoRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Check if AirPlay is supported
-  const isAirPlaySupported = useMemo(() => {
-    return (
-      typeof videoRef.current?.webkitShowPlaybackTargetPicker === "function"
-    );
-  }, []);
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const response = await fetch(
+          "https://raw.githubusercontent.com/dtankdempse/daddylive-m3u/refs/heads/main/playlist.m3u8"
+        );
+        const text = await response.text();
+        const lines = text.split("\n");
+        const parsedChannels = [];
 
-  // Check if Picture-in-Picture is supported
-  const isPiPSupported = useMemo(() => {
-    return "pictureInPictureEnabled" in document;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].startsWith("#EXTINF")) {
+            const info = lines[i];
+            const url = lines[i + 1];
+            const nameMatch = info.match(/tvg-name="([^"]+)"/);
+            const logoMatch = info.match(/tvg-logo="([^"]+)"/);
+            const groupMatch = info.match(/group-title="([^"]+)"/);
+            const tvgIdMatch = info.match(/tvg-id="([^"]+)"/);
+
+            if (nameMatch && url) {
+              parsedChannels.push({
+                name: nameMatch[1],
+                url: url.trim(),
+                logo: logoMatch ? logoMatch[1] : "",
+                group: groupMatch ? groupMatch[1] : "Unknown",
+                tvgId: tvgIdMatch ? tvgIdMatch[1] : "",
+              });
+            }
+          }
+        }
+
+        setChannels(parsedChannels);
+
+        // Automatically play the first channel
+        if (parsedChannels.length > 0) {
+          setCurrentChannel(parsedChannels[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch channels:", error);
+      }
+    };
+
+    fetchChannels();
   }, []);
 
   useEffect(() => {
-    const sampleChannels = [
-      {
-        name: "A&E",
-        url: "https://xyzdddd.mizhls.ru/lb/premium302/index.m3u8",
-        logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/a-and-e-us.png",
-        group: "USA (DADDY LIVE)",
-        tvgId: "A.and.E.US.-.Eastern.Feed.us",
-      },
-      {
-        name: "ABC (WFAA)",
-        url: "https://xyzdddd.mizhls.ru/lb/premium51/index.m3u8",
-        logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/us-local/abc-8-wfaa-us.png",
-        group: "USA (DADDY LIVE)",
-        tvgId: "ABC.(WFAA).Dallas,.TX.us",
-      },
-      {
-        name: "UEFA Champions League: Arsenal vs Dinamo Zagreb",
-        url: "https://xyzdddd.mizhls.ru/lb/premium32/index.m3u8",
-        logo: "https://www.thesportsdb.com/images/media/event/thumb/3cwr4a1725264657.jpg/preview",
-        group: "Events (DADDY LIVE)",
-        tvgId: "UEFA.Champions.League.Arsenal.vs.Dinamo.Zagreb.2025",
-      },
-      {
-        name: "UEFA Champions League: Arsenal vs Dinamo Zagreb (Mirror 1)",
-        url: "https://xyzdddd.mizhls.ru/lb/premium13/index.m3u8",
-        logo: "https://www.thesportsdb.com/images/media/event/thumb/3cwr4a1725264657.jpg/preview",
-        group: "Events (Mirrors)",
-        tvgId: "UEFA.Champions.League.Arsenal.vs.Dinamo.Zagreb.2025.Mirror1",
-      },
-      {
-        name: "UEFA Champions League: Arsenal vs Dinamo Zagreb (Mirror 2)",
-        url: "https://xyzdddd.mizhls.ru/lb/premium2/index.m3u8",
-        logo: "https://www.thesportsdb.com/images/media/event/thumb/3cwr4a1725264657.jpg/preview",
-        group: "Events (Mirrors)",
-        tvgId: "UEFA.Champions.League.Arsenal.vs.Dinamo.Zagreb.2025.Mirror2",
-      },
-    ];
-    setChannels(sampleChannels);
-  }, []);
+    if (currentChannel && videoRef.current) {
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          maxBufferLength: 30,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxMaxBufferLength: 600,
+        });
+        hls.loadSource(currentChannel.url);
+        hls.attachMedia(videoRef.current);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoRef.current.play();
+        });
+      } else if (
+        videoRef.current.canPlayType("application/vnd.apple.mpegurl")
+      ) {
+        videoRef.current.src = currentChannel.url;
+        videoRef.current.play();
+      } else {
+        console.error("HLS is not supported in this browser.");
+      }
+      setIsPlaying(true);
+    }
+  }, [currentChannel]);
 
-  const groups = useMemo(() => {
-    return Array.from(new Set(channels.map((channel) => channel.group)));
-  }, [channels]);
+  const debouncedSetSearchQuery = useMemo(
+    () => debounce(setSearchQuery, 300),
+    []
+  );
 
   const filteredChannels = useMemo(() => {
     return channels.filter((channel) => {
       const matchesSearch = channel.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-      const matchesGroup = !selectedGroup || channel.group === selectedGroup;
+      const matchesGroup =
+        selectedGroup === "Favorites"
+          ? favorites.includes(channel.tvgId)
+          : !selectedGroup || channel.group === selectedGroup;
       return matchesSearch && matchesGroup;
     });
-  }, [channels, searchQuery, selectedGroup]);
+  }, [channels, searchQuery, selectedGroup, favorites]);
 
   const handleChannelSelect = (channel) => {
     setCurrentChannel(channel);
@@ -196,19 +179,17 @@ export default function OnPlayer() {
     }
   };
 
-  const handleVolumeChange = (value) => {
-    const newVolume = value[0];
-    setVolume(newVolume);
-    if (videoRef.current) {
-      videoRef.current.volume = newVolume;
-    }
-  };
-
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-    } else {
-      document.exitFullscreen();
+    if (containerRef.current) {
+      if (!document.fullscreenElement) {
+        containerRef.current.requestFullscreen().catch((err) => {
+          console.error(
+            `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+          );
+        });
+      } else {
+        document.exitFullscreen();
+      }
     }
   };
 
@@ -218,31 +199,6 @@ export default function OnPlayer() {
         ? prev.filter((id) => id !== tvgId)
         : [...prev, tvgId]
     );
-  };
-
-  const togglePiP = async () => {
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else if (videoRef.current) {
-        await videoRef.current.requestPictureInPicture();
-      }
-    } catch (error) {
-      console.error("PiP failed:", error);
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      setDuration(videoRef.current.duration);
-    }
-  };
-
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   const rewind = () => {
@@ -257,59 +213,39 @@ export default function OnPlayer() {
     }
   };
 
-  const toggleCast = async () => {
-    if (videoRef.current && videoRef.current.webkitShowPlaybackTargetPicker) {
-      try {
-        await videoRef.current.webkitShowPlaybackTargetPicker(); // Show AirPlay devices
-        setShowDevices(true); // Show available devices
-      } catch (error) {
-        console.error("Casting failed:", error);
-      }
-    }
+  const toggleCast = () => {
+    const devices = ["Living Room TV", "Bedroom Speaker", "Office Monitor"];
+    setAvailableDevices(devices);
+    setShowDevices(!showDevices);
+  };
+
+  const handleDeviceSelect = (device) => {
+    console.log(`Selected device: ${device}`);
+    setShowDevices(false);
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white overflow-hidden"
-    >
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar Toggle Button */}
+      <button
+        onClick={() => setShowSidebar(!showSidebar)}
+        className="fixed top-4 left-4 z-50 p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
+      >
+        <Menu size={24} />
+      </button>
+
       {/* Sidebar */}
       <AnimatePresence>
         {showSidebar && (
           <motion.div
-            initial={{ x: -300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full md:w-96 bg-black/60 backdrop-blur-md p-6 overflow-y-auto border-r border-white/20"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.3 }}
+            className="w-80 bg-gradient-to-b from-purple-600 to-pink-500 text-white p-6 space-y-4 shadow-lg"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                Channels
-              </h2>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                    <Filter size={20} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                  <DropdownMenuItem onClick={() => setSelectedGroup(null)}>
-                    All Groups
-                  </DropdownMenuItem>
-                  {groups.map((group) => (
-                    <DropdownMenuItem
-                      key={group}
-                      onClick={() => setSelectedGroup(group)}
-                    >
-                      {group}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div className="relative mb-6">
+            <h2 className="text-3xl font-bold text-white mb-4">Channels</h2>
+            <div className="relative mb-6 mt-4">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                 size={16}
@@ -317,10 +253,27 @@ export default function OnPlayer() {
               <input
                 type="text"
                 placeholder="Search channels..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => debouncedSetSearchQuery(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
               />
+            </div>
+
+            <div className="mb-6">
+              <select
+                value={selectedGroup || ""}
+                onChange={(e) => setSelectedGroup(e.target.value || null)}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out"
+              >
+                <option value="">All Groups</option>
+                <option value="Favorites">Favorites</option>
+                {[...new Set(channels.map((channel) => channel.group))].map(
+                  (group) => (
+                    <option key={group} value={group}>
+                      {group}
+                    </option>
+                  )
+                )}
+              </select>
             </div>
 
             <div className="space-y-2">
@@ -331,7 +284,7 @@ export default function OnPlayer() {
                   className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
                     currentChannel?.tvgId === channel.tvgId
                       ? "bg-gradient-to-r from-blue-500/30 to-purple-500/30 border border-white/30"
-                      : "hover:bg-white/10"
+                      : "hover:bg-gray-700"
                   }`}
                 >
                   <div className="w-12 h-12 relative mr-3">
@@ -343,8 +296,10 @@ export default function OnPlayer() {
                     />
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-medium text-sm">{channel.name}</div>
-                    <div className="text-xs text-gray-400">{channel.group}</div>
+                    <div className="font-semibold text-lg text-white">
+                      {channel.name}
+                    </div>
+                    <div className="text-sm text-gray-400">{channel.group}</div>
                   </div>
                   <button
                     onClick={(e) => {
@@ -365,6 +320,14 @@ export default function OnPlayer() {
                 </button>
               ))}
             </div>
+
+            {/* Watch Button */}
+            <button
+              onClick={() => setShowSidebar(false)}
+              className="mt-6 w-full py-3 bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            >
+              Watch
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -378,9 +341,8 @@ export default function OnPlayer() {
                 ref={videoRef}
                 className="w-full h-full object-contain"
                 controls={false}
-                onTimeUpdate={handleTimeUpdate}
                 autoPlay
-                playsInline // Required for mobile Safari
+                playsInline
               />
               <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
                 <Image
@@ -397,37 +359,6 @@ export default function OnPlayer() {
                   </p>
                 </div>
               </div>
-
-              {/* Cast, PiP, and Fullscreen Icons */}
-              <div className="absolute top-4 right-4 flex space-x-2">
-                {isAirPlaySupported && (
-                  <button
-                    onClick={toggleCast}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors relative"
-                  >
-                    <Cast className="w-6 h-6" /> {/* Cast icon */}
-                    {showDevices && (
-                      <div className="absolute top-10 right-0 bg-black/80 backdrop-blur-sm p-2 rounded-lg text-sm">
-                        Available Devices
-                      </div>
-                    )}
-                  </button>
-                )}
-                {isPiPSupported && (
-                  <button
-                    onClick={togglePiP}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <PictureInPicture className="w-6 h-6" />
-                  </button>
-                )}
-                <button
-                  onClick={toggleFullscreen}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <Maximize2 className="w-6 h-6" />
-                </button>
-              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
@@ -435,7 +366,7 @@ export default function OnPlayer() {
                 <Play size={64} className="text-white ml-2" />
               </div>
               <p className="text-white text-xl font-semibold">
-                Select a channel to start watching
+                Loading channels...
               </p>
             </div>
           )}
@@ -443,78 +374,72 @@ export default function OnPlayer() {
 
         {/* Controls Below the Video Player */}
         {currentChannel && (
-          <div className="bg-black/60 backdrop-blur-md p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={togglePlay}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-6 h-6" />
-                  ) : (
-                    <Play className="w-6 h-6" />
-                  )}
-                </button>
-                <button
-                  onClick={rewind}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <Rewind className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={fastForward}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <FastForward className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={toggleMute}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  {isMuted ? (
-                    <VolumeX className="w-6 h-6" />
-                  ) : (
-                    <Volume2 className="w-6 h-6" />
-                  )}
-                </button>
-                <Slider
-                  value={[volume]}
-                  max={1}
-                  step={0.1}
-                  onValueChange={handleVolumeChange}
-                  className="w-24"
-                />
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm">{formatTime(currentTime)}</span>
-              <Slider
-                value={[currentTime]}
-                max={duration}
-                step={1}
-                onValueChange={(value) => {
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = value[0];
-                  }
-                }}
-                className="flex-1"
-              />
-              <span className="text-sm">{formatTime(duration)}</span>
-            </div>
+          <div className="bg-black/60 backdrop-blur-md p-4 flex justify-center space-x-4">
+            <button
+              onClick={togglePlay}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              {isPlaying ? (
+                <Pause className="w-6 h-6" />
+              ) : (
+                <Play className="w-6 h-6" />
+              )}
+            </button>
+            <button
+              onClick={rewind}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <Rewind className="w-6 h-6" />
+            </button>
+            <button
+              onClick={fastForward}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <FastForward className="w-6 h-6" />
+            </button>
+            <button
+              onClick={toggleMute}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              {isMuted ? (
+                <VolumeX className="w-6 h-6" />
+              ) : (
+                <Volume2 className="w-6 h-6" />
+              )}
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <Maximize2 className="w-6 h-6" />
+            </button>
+            <button
+              onClick={toggleCast}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <MdCast className="w-6 h-6" />
+            </button>
           </div>
         )}
       </div>
 
-      {/* Mobile Toggle Sidebar Button */}
-      <button
-        onClick={() => setShowSidebar(!showSidebar)}
-        className="md:hidden fixed bottom-4 right-4 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg"
-      >
-        {showSidebar ? <ChevronDown /> : <Search />}
-      </button>
+      {/* Available Devices List */}
+      {showDevices && (
+        <div className="absolute bottom-20 right-4 bg-gradient-to-r from-green-400 to-blue-500 p-4 rounded-lg shadow-lg text-sm">
+          <h4 className="text-white mb-2 font-bold">Available Devices</h4>
+          <ul className="space-y-2">
+            {availableDevices.map((device, index) => (
+              <li
+                key={index}
+                className="text-white bg-black/50 hover:bg-black/70 p-2 rounded-lg cursor-pointer transition-colors"
+                onClick={() => handleDeviceSelect(device)}
+              >
+                {device}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
