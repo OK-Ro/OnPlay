@@ -12,8 +12,10 @@ import {
   Rewind,
   FastForward,
   Menu,
+  Minimize2,
+  Cast,
 } from "lucide-react";
-import { MdCast } from "react-icons/md";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { debounce } from "lodash";
 
@@ -45,7 +47,8 @@ export default function OnPlayer() {
   const [showDevices, setShowDevices] = useState(false);
   const [availableDevices, setAvailableDevices] = useState([]);
   const videoRef = useRef(null);
-  const containerRef = useRef(null);
+
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -95,25 +98,22 @@ export default function OnPlayer() {
   useEffect(() => {
     if (currentChannel && videoRef.current) {
       if (Hls.isSupported()) {
-        const hls = new Hls({
-          maxBufferLength: 30,
-          maxBufferSize: 60 * 1000 * 1000,
-          maxMaxBufferLength: 600,
-        });
+        const hls = new Hls();
         hls.loadSource(currentChannel.url);
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           videoRef.current.play();
+          setIsPlaying(true);
         });
       } else if (
         videoRef.current.canPlayType("application/vnd.apple.mpegurl")
       ) {
         videoRef.current.src = currentChannel.url;
-        videoRef.current.play();
-      } else {
-        console.error("HLS is not supported in this browser.");
+        videoRef.current.addEventListener("loadedmetadata", () => {
+          videoRef.current.play();
+          setIsPlaying(true);
+        });
       }
-      setIsPlaying(true);
     }
   }, [currentChannel]);
 
@@ -139,11 +139,7 @@ export default function OnPlayer() {
     setCurrentChannel(channel);
     if (videoRef.current) {
       if (Hls.isSupported()) {
-        const hls = new Hls({
-          maxBufferLength: 30,
-          maxBufferSize: 60 * 1000 * 1000,
-          maxMaxBufferLength: 600,
-        });
+        const hls = new Hls();
         hls.loadSource(channel.url);
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -153,15 +149,15 @@ export default function OnPlayer() {
         videoRef.current.canPlayType("application/vnd.apple.mpegurl")
       ) {
         videoRef.current.src = channel.url;
-        videoRef.current.play();
-      } else {
-        console.error("HLS is not supported in this browser.");
+        videoRef.current.addEventListener("loadedmetadata", () => {
+          videoRef.current.play();
+        });
       }
       setIsPlaying(true);
     }
   };
 
-  const togglePlay = () => {
+  const togglePlayPause = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -180,16 +176,13 @@ export default function OnPlayer() {
   };
 
   const toggleFullscreen = () => {
-    if (containerRef.current) {
-      if (!document.fullscreenElement) {
-        containerRef.current.requestFullscreen().catch((err) => {
-          console.error(
-            `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
-          );
-        });
+    if (videoRef.current) {
+      if (!isFullScreen) {
+        videoRef.current.requestFullscreen();
       } else {
         document.exitFullscreen();
       }
+      setIsFullScreen(!isFullScreen);
     }
   };
 
@@ -213,38 +206,87 @@ export default function OnPlayer() {
     }
   };
 
-  const toggleCast = () => {
-    const devices = ["Living Room TV", "Bedroom Speaker", "Office Monitor"];
-    setAvailableDevices(devices);
-    setShowDevices(!showDevices);
+  const toggleCast = async () => {
+    if (typeof window === "undefined") return;
+
+    if ("presentation" in navigator) {
+      try {
+        // Request permission to access media devices
+        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+
+        // Enumerate devices
+        const availableDevices =
+          await navigator.mediaDevices.enumerateDevices();
+        const presentationDevices = availableDevices.filter(
+          (device) =>
+            device.kind === "audiooutput" || device.kind === "videoinput"
+        );
+
+        // Check if any presentation devices are found
+        if (presentationDevices.length > 0) {
+          setAvailableDevices(presentationDevices);
+        } else {
+          console.warn("No presentation devices found.");
+        }
+
+        setShowDevices(true);
+      } catch (error) {
+        console.error("Error accessing media devices:", error);
+      }
+    } else {
+      console.warn("Presentation API is not supported in this browser");
+      // Fallback to simulating available devices
+      const simulatedDevices = [
+        "Living Room TV",
+        "Bedroom Speaker",
+        "Office Monitor",
+      ];
+      setAvailableDevices(simulatedDevices);
+      setShowDevices(!showDevices);
+    }
   };
 
-  const handleDeviceSelect = (device) => {
-    console.log(`Selected device: ${device}`);
+  const handleDeviceSelect = async (device) => {
+    if ("presentation" in navigator) {
+      try {
+        const presentationRequest = new PresentationRequest([
+          currentChannel.url,
+        ]);
+        await presentationRequest.start(); // Removed unused `connection` variable
+        console.log(
+          `Started presentation on device: ${device.label || device}`
+        );
+      } catch (error) {
+        console.error("Error starting presentation:", error);
+      }
+    } else {
+      console.log(`Selected device: ${device}`);
+    }
     setShowDevices(false);
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className={`flex h-screen ${isFullScreen ? "overflow-hidden" : ""}`}>
       {/* Sidebar Toggle Button */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
-        className="fixed top-4 left-4 z-50 p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
+        className="fixed top-4 left-4 z-50 p-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
       >
-        <Menu size={24} />
+        <Menu size={26} />
       </button>
 
       {/* Sidebar */}
       <AnimatePresence>
         {showSidebar && (
           <motion.div
-            initial={{ x: "-100%" }}
+            initial={{ x: -300 }}
             animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ duration: 0.3 }}
-            className="w-80 bg-gradient-to-b from-purple-600 to-pink-500 text-white p-6 space-y-4 shadow-lg"
+            exit={{ x: -300 }}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 w-80 h-full shadow-lg"
           >
-            <h2 className="text-3xl font-bold text-white mb-4">Channels</h2>
+            <h2 className="text-3xl font-bold text-white mb-4 ml-20 mb-10">
+              Channels
+            </h2>
             <div className="relative mb-6 mt-4">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -276,55 +318,60 @@ export default function OnPlayer() {
               </select>
             </div>
 
-            <div className="space-y-2">
-              {filteredChannels.map((channel) => (
-                <button
-                  key={channel.tvgId}
-                  onClick={() => handleChannelSelect(channel)}
-                  className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
-                    currentChannel?.tvgId === channel.tvgId
-                      ? "bg-gradient-to-r from-blue-500/30 to-purple-500/30 border border-white/30"
-                      : "hover:bg-gray-700"
-                  }`}
-                >
-                  <div className="w-12 h-12 relative mr-3">
-                    <Image
-                      src={channel.logo || "/placeholder.svg"}
-                      alt={channel.name}
-                      fill
-                      className="object-contain rounded-md"
-                    />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold text-lg text-white">
-                      {channel.name}
-                    </div>
-                    <div className="text-sm text-gray-400">{channel.group}</div>
-                  </div>
+            {/* Scrollable Channel List */}
+            <div className="h-96 overflow-hidden">
+              <div className="h-full overflow-y-auto">
+                {filteredChannels.map((channel) => (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(channel.tvgId);
-                    }}
-                    className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                    key={channel.tvgId}
+                    onClick={() => handleChannelSelect(channel)}
+                    className={`w-full flex items-center p-3 rounded-lg transition-all duration-200 ${
+                      currentChannel?.tvgId === channel.tvgId
+                        ? "bg-gradient-to-r from-blue-500/30 to-purple-500/30 border border-white/30"
+                        : "hover:bg-gray-700"
+                    }`}
                   >
-                    {favorites.includes(channel.tvgId) ? (
-                      <Star
-                        size={18}
-                        className="text-yellow-500 fill-yellow-500"
+                    <div className="w-12 h-12 relative mr-3">
+                      <Image
+                        src={channel.logo || "/placeholder.svg"}
+                        alt={channel.name}
+                        fill
+                        className="object-contain rounded-md"
                       />
-                    ) : (
-                      <StarOff size={18} className="text-gray-400" />
-                    )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold text-lg text-white">
+                        {channel.name}
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        {channel.group}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(channel.tvgId);
+                      }}
+                      className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                    >
+                      {favorites.includes(channel.tvgId) ? (
+                        <Star
+                          size={18}
+                          className="text-yellow-500 fill-yellow-500"
+                        />
+                      ) : (
+                        <StarOff size={18} className="text-gray-400" />
+                      )}
+                    </button>
                   </button>
-                </button>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Watch Button */}
             <button
               onClick={() => setShowSidebar(false)}
-              className="mt-6 w-full py-3 bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="mt-10 w-full py-4 bg-gradient-to-r from-green-400 to-blue-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-shadow"
             >
               Watch
             </button>
@@ -339,7 +386,9 @@ export default function OnPlayer() {
             <div className="relative w-full h-full">
               <video
                 ref={videoRef}
-                className="w-full h-full object-contain"
+                className={`flex-1 mt-32 p-2 ${
+                  isFullScreen ? "w-screen h-screen" : "w-auto h-auto"
+                }`}
                 controls={false}
                 autoPlay
                 playsInline
@@ -374,10 +423,10 @@ export default function OnPlayer() {
 
         {/* Controls Below the Video Player */}
         {currentChannel && (
-          <div className="bg-black/60 backdrop-blur-md p-4 flex justify-center space-x-4">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 backdrop-blur-md p-4 flex justify-center space-x-4">
             <button
-              onClick={togglePlay}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              onClick={togglePlayPause}
+              className="p-2 hover:bg-white rounded-full transition-colors"
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6" />
@@ -411,13 +460,17 @@ export default function OnPlayer() {
               onClick={toggleFullscreen}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
             >
-              <Maximize2 className="w-6 h-6" />
+              {isFullScreen ? (
+                <Minimize2 className="w-6 h-6" />
+              ) : (
+                <Maximize2 className="w-6 h-6" />
+              )}
             </button>
             <button
               onClick={toggleCast}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
             >
-              <MdCast className="w-6 h-6" />
+              <Cast className="w-6 h-6" />
             </button>
           </div>
         )}
@@ -434,7 +487,7 @@ export default function OnPlayer() {
                 className="text-white bg-black/50 hover:bg-black/70 p-2 rounded-lg cursor-pointer transition-colors"
                 onClick={() => handleDeviceSelect(device)}
               >
-                {device}
+                {device.label || `Device ${index + 1}`}
               </li>
             ))}
           </ul>
