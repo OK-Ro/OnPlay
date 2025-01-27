@@ -49,6 +49,7 @@ export default function OnPlayer() {
   const videoRef = useRef(null);
 
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showLogo, setShowLogo] = useState(true);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -178,9 +179,31 @@ export default function OnPlayer() {
   const toggleFullscreen = () => {
     if (videoRef.current) {
       if (!isFullScreen) {
-        videoRef.current.requestFullscreen();
+        if (videoRef.current.requestFullscreen) {
+          videoRef.current.requestFullscreen();
+        } else if (videoRef.current.mozRequestFullScreen) {
+          // Firefox
+          videoRef.current.mozRequestFullScreen();
+        } else if (videoRef.current.webkitRequestFullscreen) {
+          // Chrome, Safari and Opera
+          videoRef.current.webkitRequestFullscreen();
+        } else if (videoRef.current.msRequestFullscreen) {
+          // IE/Edge
+          videoRef.current.msRequestFullscreen();
+        }
       } else {
-        document.exitFullscreen();
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          // Firefox
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          // Chrome, Safari and Opera
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          // IE/Edge
+          document.msExitFullscreen();
+        }
       }
       setIsFullScreen(!isFullScreen);
     }
@@ -211,38 +234,28 @@ export default function OnPlayer() {
 
     if ("presentation" in navigator) {
       try {
-        // Request permission to access media devices
-        await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-
-        // Enumerate devices
         const availableDevices =
           await navigator.mediaDevices.enumerateDevices();
         const presentationDevices = availableDevices.filter(
           (device) =>
-            device.kind === "audiooutput" || device.kind === "videoinput"
+            device.kind === "videoinput" || device.kind === "audioinput"
         );
 
-        // Check if any presentation devices are found
         if (presentationDevices.length > 0) {
-          setAvailableDevices(presentationDevices);
+          // Logic to connect to the selected device
+          const presentationRequest = new PresentationRequest([
+            currentChannel.url,
+          ]);
+          const connection = await presentationRequest.start();
+          console.log("Connected to casting device:", connection);
         } else {
           console.warn("No presentation devices found.");
         }
-
-        setShowDevices(true);
       } catch (error) {
         console.error("Error accessing media devices:", error);
       }
     } else {
       console.warn("Presentation API is not supported in this browser");
-      // Fallback to simulating available devices
-      const simulatedDevices = [
-        "Living Room TV",
-        "Bedroom Speaker",
-        "Office Monitor",
-      ];
-      setAvailableDevices(simulatedDevices);
-      setShowDevices(!showDevices);
     }
   };
 
@@ -265,15 +278,44 @@ export default function OnPlayer() {
     setShowDevices(false);
   };
 
+  // Prevent default touch events to avoid scrolling
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+  };
+
+  const handleMenuToggle = () => {
+    setShowLogo(false);
+    setShowSidebar(true);
+  };
+
+  // Example usage of setAvailableDevices
+  useEffect(() => {
+    // Simulate fetching available devices
+    const devices = ["Device 1", "Device 2"]; // Replace with actual device fetching logic
+    setAvailableDevices(devices);
+  }, [setAvailableDevices]);
+
+  // Reset logo and menu button visibility when component mounts
+  useEffect(() => {
+    setShowLogo(true);
+    setShowSidebar(false);
+  }, [currentChannel]); // This will run whenever currentChannel changes
+
   return (
-    <div className={`flex h-screen ${isFullScreen ? "overflow-hidden" : ""}`}>
+    <div
+      className={`flex h-screen ${isFullScreen ? "overflow-hidden" : ""}`}
+      onTouchMove={handleTouchMove}
+      style={{ touchAction: "none", backgroundColor: "black" }}
+    >
       {/* Sidebar Toggle Button */}
-      <button
-        onClick={() => setShowSidebar(!showSidebar)}
-        className="fixed top-4 left-4 z-50 p-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
-      >
-        <Menu size={26} />
-      </button>
+      {!showSidebar && (
+        <button
+          onClick={handleMenuToggle}
+          className="fixed top-4 left-4 z-50 p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow"
+        >
+          <Menu size={24} />
+        </button>
+      )}
 
       {/* Sidebar */}
       <AnimatePresence>
@@ -284,7 +326,7 @@ export default function OnPlayer() {
             exit={{ x: -300 }}
             className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 w-80 h-full shadow-lg"
           >
-            <h2 className="text-3xl font-bold text-white mb-4 ml-20 mb-10">
+            <h2 className="text-3xl font-bold text-white mb-4 ml-2 mb-10">
               Channels
             </h2>
             <div className="relative mb-6 mt-4">
@@ -423,54 +465,54 @@ export default function OnPlayer() {
 
         {/* Controls Below the Video Player */}
         {currentChannel && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 backdrop-blur-md p-4 flex justify-center space-x-4">
+          <div className="bg-gradient-to-r from-blue-900 to-red-500 backdrop-blur-md p-4 flex justify-center space-x-4">
             <button
               onClick={togglePlayPause}
-              className="p-2 hover:bg-white rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors bg-white/20 hover:bg-white/30 shadow-lg"
             >
               {isPlaying ? (
-                <Pause className="w-6 h-6" />
+                <Pause className="w-6 h-6 text-white glow" />
               ) : (
-                <Play className="w-6 h-6" />
+                <Play className="w-6 h-6 text-white glow" />
               )}
             </button>
             <button
               onClick={rewind}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors bg-white/20 hover:bg-white/30 shadow-lg"
             >
-              <Rewind className="w-6 h-6" />
+              <Rewind className="w-6 h-6 text-white glow" />
             </button>
             <button
               onClick={fastForward}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors bg-white/20 hover:bg-white/30 shadow-lg"
             >
-              <FastForward className="w-6 h-6" />
+              <FastForward className="w-6 h-6 text-white glow" />
             </button>
             <button
               onClick={toggleMute}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors bg-white/20 hover:bg-white/30 shadow-lg"
             >
               {isMuted ? (
-                <VolumeX className="w-6 h-6" />
+                <VolumeX className="w-6 h-6 text-white glow" />
               ) : (
-                <Volume2 className="w-6 h-6" />
+                <Volume2 className="w-6 h-6 text-white glow" />
               )}
             </button>
             <button
               onClick={toggleFullscreen}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors bg-white/20 hover:bg-white/30 shadow-lg"
             >
               {isFullScreen ? (
-                <Minimize2 className="w-6 h-6" />
+                <Minimize2 className="w-6 h-6 text-white glow" />
               ) : (
-                <Maximize2 className="w-6 h-6" />
+                <Maximize2 className="w-6 h-6 text-white glow" />
               )}
             </button>
             <button
               onClick={toggleCast}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2 rounded-full transition-colors bg-white/20 hover:bg-white/30 shadow-lg"
             >
-              <Cast className="w-6 h-6" />
+              <Cast className="w-6 h-6 text-white glow" />
             </button>
           </div>
         )}
@@ -491,6 +533,20 @@ export default function OnPlayer() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Stylish Logo in the top right corner */}
+      {showLogo && !showSidebar && (
+        <div className="absolute top-4 right-4 flex items-center">
+          <div className="flex items-center bg-gradient-to-r from-yellow-400 to-red-500 p-2 rounded-lg shadow-lg animate-blink">
+            <span className="text-white text-2xl font-extrabold">O</span>
+            <img
+              src="https://i.pinimg.com/originals/37/97/d9/3797d93321ab72678a94ff686da5c773.png"
+              alt="Logo Icon"
+              className="w-8 h-8 ml-2"
+            />
+          </div>
         </div>
       )}
     </div>
