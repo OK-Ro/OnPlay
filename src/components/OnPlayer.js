@@ -1,5 +1,3 @@
-/* global MediaSession */
-
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Hls from "hls.js";
 import {
@@ -239,75 +237,29 @@ export default function OnPlayer() {
 
     if ("presentation" in navigator) {
       try {
-        const presentationRequest = new PresentationRequest([
-          currentChannel.url,
-        ]);
-        const availableDisplays = await presentationRequest.getAvailability();
+        const availableDevices =
+          await navigator.mediaDevices.enumerateDevices();
+        console.log("Available Devices:", availableDevices);
 
-        console.log("Available displays:", availableDisplays.value); // Debugging log
+        const presentationDevices = availableDevices.filter(
+          (device) =>
+            device.kind === "videoinput" || device.kind === "audioinput"
+        );
 
-        if (availableDisplays.value) {
-          // Show available devices
-          const display = await presentationRequest.show();
-          display.addEventListener("close", () => {
-            console.log("Presentation closed");
-          });
-
-          // Load the media on the selected display
-          const media = new MediaStream();
-          const videoTrack = videoRef.current
-            .captureStream()
-            .getVideoTracks()[0];
-          media.addTrack(videoTrack);
-
-          // Check if MediaSession is supported
-          if ("MediaSession" in window) {
-            const mediaSession = new MediaSession();
-            mediaSession.metadata = new MediaMetadata({
-              title: currentChannel.name,
-              artist: "Your Artist Name", // Replace with actual artist name
-              album: "Your Album Name", // Replace with actual album name
-              artwork: [
-                {
-                  src: currentChannel.logo || "/placeholder.svg",
-                  sizes: "96x96",
-                  type: "image/png",
-                },
-              ],
-            });
-
-            mediaSession.playbackState = "playing";
-            mediaSession.setPositionState({
-              duration: videoRef.current.duration,
-              playbackRate: 1,
-              position: videoRef.current.currentTime,
-              state: isPlaying ? "playing" : "paused",
-            });
-          } else {
-            console.warn("MediaSession API is not supported in this browser");
-            alert("MediaSession API is not supported in this browser.");
-          }
-
-          // Start casting the media
-          const castSession = await display.start(media);
-          console.log("Casting to:", castSession);
+        if (presentationDevices.length > 0) {
+          const presentationRequest = new PresentationRequest([
+            currentChannel.url,
+          ]);
+          const connection = await presentationRequest.start();
+          console.log("Connected to casting device:", connection);
         } else {
-          console.warn("No presentation displays available.");
-          alert(
-            "No casting devices found. Please ensure your devices are turned on and connected to the same network."
-          );
+          console.warn("No presentation devices found.");
         }
       } catch (error) {
-        console.error("Error accessing presentation API:", error);
-        alert(
-          "Unable to access casting functionality. Please check your browser settings and try again."
-        );
+        console.error("Error accessing media devices:", error);
       }
     } else {
       console.warn("Presentation API is not supported in this browser");
-      alert(
-        "Casting is not supported in this browser. Please use Chrome or Edge for casting functionality."
-      );
     }
   };
 
