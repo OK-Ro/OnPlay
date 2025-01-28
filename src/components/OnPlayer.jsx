@@ -106,7 +106,7 @@ export default function OnPlayer() {
         hls.loadSource(currentChannel.url);
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          videoRef.current.play();
+          checkVideoPlayback();
           setIsPlaying(true);
         });
       } else if (
@@ -114,7 +114,7 @@ export default function OnPlayer() {
       ) {
         videoRef.current.src = currentChannel.url;
         videoRef.current.addEventListener("loadedmetadata", () => {
-          videoRef.current.play();
+          checkVideoPlayback();
           setIsPlaying(true);
         });
       }
@@ -241,10 +241,17 @@ export default function OnPlayer() {
           JSON.stringify({
             type: "play",
             url: currentChannel.url,
-            audioUrl: currentChannel.url, // Assuming audio is part of the same stream
+            audioUrl: currentChannel.url,
+            videoType: "application/x-mpegURL", // Specify the video type for HLS streams
           })
         );
         console.log("Video and audio URLs sent to presentation display");
+
+        // Add an error listener to the connection
+        connection.onerror = (error) => {
+          console.error("Presentation connection error:", error);
+          alert("An error occurred during casting. Please try again.");
+        };
       } catch (error) {
         console.error("Error accessing presentation API:", error);
         alert(
@@ -313,7 +320,7 @@ export default function OnPlayer() {
   useEffect(() => {
     setShowLogo(true);
     setShowSidebar(false);
-  }, [currentChannel]); // This will run whenever currentChannel changes
+  }, []); // Updated useEffect dependency array
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -325,6 +332,24 @@ export default function OnPlayer() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
+
+  const checkVideoPlayback = () => {
+    if (videoRef.current) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then((_) => {
+            console.log("Video playback started successfully");
+          })
+          .catch((error) => {
+            console.error("Video playback was prevented:", error);
+            alert(
+              "Video playback failed. This may be due to autoplay restrictions or codec issues. Please try interacting with the video player directly."
+            );
+          });
+      }
+    }
+  };
 
   return (
     <div
