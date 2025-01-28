@@ -14,13 +14,11 @@ import {
   Menu,
   Minimize2,
   Cast,
-  PictureInPicture,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { debounce } from "lodash";
 import CategoriesPage from "./CategoriesPage";
-import Loading from "./Loading";
 
 // Custom Image Component (replaces next/image)
 const Image = ({ src, alt, width, height, className, fill }) => {
@@ -53,7 +51,6 @@ export default function OnPlayer() {
 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showLogo, setShowLogo] = useState(true);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -180,6 +177,16 @@ export default function OnPlayer() {
     }
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      videoRef.current?.requestFullscreen();
+      setIsFullScreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
+
   const toggleFavorite = (tvgId) => {
     setFavorites((prev) =>
       prev.includes(tvgId)
@@ -269,64 +276,18 @@ export default function OnPlayer() {
         const presentationRequest = new PresentationRequest([
           currentChannel.url,
         ]);
-        const connection = await presentationRequest.start();
+        await presentationRequest.start(); // Removed unused `connection` variable
         console.log(
           `Started presentation on device: ${device.label || device}`
         );
-
-        // Use the connection to send the current channel information
-        await connection.send(
-          JSON.stringify({
-            type: "changeChannel",
-            channelUrl: currentChannel.url,
-            channelName: currentChannel.name,
-          })
-        );
-
-        // Set up a listener for messages from the presentation display
-        connection.addEventListener("message", (event) => {
-          const message = JSON.parse(event.data);
-          if (message.type === "playbackStatus") {
-            console.log(`Playback status on cast device: ${message.status}`);
-          }
-        });
-
-        // Store the connection for later use (you might want to add this to your component's state)
-        // setActiveCastConnection(connection);
       } catch (error) {
         console.error("Error starting presentation:", error);
-        alert("Failed to start casting. Please try again.");
       }
     } else {
       console.log(`Selected device: ${device}`);
-      alert(
-        "Casting is not supported on this browser. Please use a compatible browser."
-      );
     }
     setShowDevices(false);
   };
-
-  const toggleFullScreen = () => {
-    console.log("Full screen button clicked");
-    if (!document.fullscreenElement) {
-      videoRef.current.requestFullscreen();
-      setIsFullScreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullScreen(false);
-    }
-  };
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
 
   const handleTouchMove = (event) => {
     // Your logic for handling touch move events
@@ -349,35 +310,6 @@ export default function OnPlayer() {
     setShowLogo(true);
     setShowSidebar(false);
   }, [currentChannel]); // This will run whenever currentChannel changes
-
-  useEffect(() => {
-    // Simulate loading for demonstration
-    const timer = setTimeout(() => {
-      setLoading(false); // Set loading to false after 2 seconds
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const togglePictureInPicture = async () => {
-    if (videoRef.current) {
-      if (document.pictureInPictureElement) {
-        // If already in PiP, exit PiP
-        await document.exitPictureInPicture();
-      } else {
-        // Request PiP
-        await videoRef.current.requestPictureInPicture();
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.addEventListener("loadedmetadata", () => {
-        console.log("Video metadata loaded.");
-        // Optionally enable the PiP button here if you have a state to manage button availability
-      });
-    }
-  }, []);
 
   return (
     <div
@@ -499,93 +431,100 @@ export default function OnPlayer() {
       </AnimatePresence>
 
       {/* Video Player */}
-      <div
-        className={`flex-1 h-56 flex flex-col ${
-          isFullScreen ? "fixed inset-0 z-50 bg-black" : ""
-        }`}
-      >
-        <div
-          className={`flex-1 bg-black relative group ${
-            isFullScreen ? "w-screen h-screen" : ""
-          }`}
-        >
+      <div className="flex-1 h-56 flex flex-col">
+        <div className="flex-1 bg-black relative group">
           {currentChannel ? (
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full ">
               <video
                 ref={videoRef}
-                className={`w-full h-full object-contain ${
-                  isFullScreen
-                    ? "absolute inset-0"
-                    : "mt-28 p-1 rounded-md border-2 border-yellow-300"
+                className={`flex-1 mt-28 p-1 w-full rounded-md border-2 border-yellow-300  ${
+                  isFullScreen ? "w-screen h-screen" : "w-auto h-auto "
                 }`}
                 controls={false}
                 autoPlay
                 playsInline
-                src={currentChannel.url}
               />
-              {!isFullScreen && (
-                <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
-                  <Image
-                    src={currentChannel.logo || "/placeholder.svg"}
-                    alt={currentChannel.name}
-                    width={32}
-                    height={32}
-                    className="rounded-md"
-                  />
-                </div>
-              )}
+              <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-black to-transparent opacity-50" />
+              <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
+                <Image
+                  src={currentChannel.logo || "/placeholder.svg"}
+                  alt={currentChannel.name}
+                  width={32}
+                  height={32}
+                  className="rounded-md"
+                />
+                <div></div>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
               <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-pulse">
                 <Play size={64} className="text-white ml-2" />
               </div>
-              <p className="text-white text-xl font-semibold">loading...</p>
+              <p className="text-white text-xl font-semibold"></p>
             </div>
           )}
         </div>
 
         {/* Controls Below the Video Player */}
-        {currentChannel && !isFullScreen && (
-          <div className="bg-gradient-to-r from-blue-900 to-red-900 backdrop-blur-md p-4 flex justify-center space-x-4 mt-4 rounded-full shadow-[0_4px_20px_rgba(0,2,3,0.9)]">
+        {currentChannel && (
+          <div className="bg-gradient-to-r from-blue-800 to-red-1000 backdrop-blur-md p-4 flex justify-center space-x-4 mt-6 rounded-full shadow-[0_4px_0px_rgba(0,2,3,0.9)]">
             <button
               onClick={togglePlayPause}
-              className="text-white hover:text-gray-300"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_20px_rgba(0,0,0,0.9)] active:shadow-[2px_20px_rgba(0,0,0,0.9)]"
             >
-              {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
+              {isPlaying ? (
+                <Pause className="w-6 h-6 text-yellow-300 glow relative z-10" />
+              ) : (
+                <Play className="w-6 h-6 text-yellow-300 glow relative z-10" />
+              )}
             </button>
-            <button onClick={rewind} className="text-white hover:text-gray-300">
-              <Rewind size={24} />
+            <button
+              onClick={rewind}
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.9)] active:shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
+            >
+              <Rewind className="w-6 h-6 text-yellow-300 glow" />
             </button>
             <button
               onClick={fastForward}
-              className="text-white hover:text-gray-300"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
             >
-              <FastForward size={24} />
+              <FastForward className="w-6 h-6 text-yellow-300 glow" />
             </button>
             <button
               onClick={toggleMute}
-              className="text-white hover:text-gray-300"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
             >
-              {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+              {isMuted ? (
+                <VolumeX className="w-6 h-6 text-yellow-300 glow" />
+              ) : (
+                <Volume2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
+              )}
             </button>
             <button
-              onClick={toggleFullScreen}
-              className="text-white hover:text-gray-300"
+              onClick={toggleFullscreen}
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden"
             >
-              {isFullScreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
-            </button>
-            <button
-              onClick={togglePictureInPicture}
-              className="text-white hover:text-gray-300"
-            >
-              <PictureInPicture size={24} />
+              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
+              {isFullScreen ? (
+                <Minimize2
+                  size={24}
+                  className="w-6 h-6 text-yellow-300 glow relative z-10"
+                />
+              ) : (
+                <Maximize2
+                  size={24}
+                  className="w-6 h-6 text-yellow-300 glow relative z-10"
+                />
+              )}
             </button>
             <button
               onClick={toggleCast}
-              className="text-white hover:text-gray-300"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden"
             >
-              <Cast size={24} />
+              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
+              <Cast className="w-6 h-6 text-yellow-300 glow relative z-10" />
             </button>
           </div>
         )}
@@ -626,46 +565,6 @@ export default function OnPlayer() {
             />
           </div>
         </div>
-      )}
-
-      {loading ? (
-        <Loading />
-      ) : (
-        <>
-          <video
-            ref={videoRef}
-            className="w-full max-w-2xl"
-            controls
-            autoPlay
-            src="your-video-url.mp4"
-            playsInline
-          >
-            Your browser does not support the video tag.
-          </video>
-          <div className="flex space-x-4 mt-4">
-            <button onClick={togglePlayPause} className="p-2">
-              {isPlaying ? (
-                <Pause className="w-6 h-6 text-yellow-300" />
-              ) : (
-                <Play className="w-6 h-6 text-yellow-300" />
-              )}
-            </button>
-            <button onClick={toggleMute} className="p-2">
-              {isMuted ? (
-                <VolumeX className="w-6 h-6 text-yellow-300" />
-              ) : (
-                <Volume2 className="w-6 h-6 text-yellow-300" />
-              )}
-            </button>
-            <button onClick={toggleFullScreen} className="p-2">
-              {isFullScreen ? (
-                <Minimize2 className="w-6 h-6 text-yellow-300" />
-              ) : (
-                <Maximize2 className="w-6 h-6 text-yellow-300" />
-              )}
-            </button>
-          </div>
-        </>
       )}
     </div>
   );
