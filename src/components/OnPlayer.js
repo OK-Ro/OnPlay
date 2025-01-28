@@ -237,29 +237,45 @@ export default function OnPlayer() {
 
     if ("presentation" in navigator) {
       try {
-        const availableDevices =
-          await navigator.mediaDevices.enumerateDevices();
-        console.log("Available Devices:", availableDevices);
+        const presentationRequest = new PresentationRequest([
+          currentChannel.url,
+        ]);
+        const availableDisplays = await presentationRequest.getAvailability();
 
-        const presentationDevices = availableDevices.filter(
-          (device) =>
-            device.kind === "videoinput" || device.kind === "audioinput"
-        );
+        console.log("Available displays:", availableDisplays.value); // Debugging log
 
-        if (presentationDevices.length > 0) {
-          const presentationRequest = new PresentationRequest([
-            currentChannel.url,
-          ]);
-          const connection = await presentationRequest.start();
-          console.log("Connected to casting device:", connection);
+        if (availableDisplays.value) {
+          const display = await presentationRequest.show();
+          display.addEventListener("close", () => {
+            console.log("Presentation closed");
+          });
+
+          // Start casting the media
+          const media = new MediaStream();
+          const videoTrack = videoRef.current
+            .captureStream()
+            .getVideoTracks()[0];
+          media.addTrack(videoTrack);
+
+          const castSession = await display.start(media);
+          console.log("Casting to:", castSession);
         } else {
-          console.warn("No presentation devices found.");
+          console.warn("No presentation displays available.");
+          alert(
+            "No casting devices found. Please ensure your devices are turned on and connected to the same network."
+          );
         }
       } catch (error) {
-        console.error("Error accessing media devices:", error);
+        console.error("Error accessing presentation API:", error);
+        alert(
+          "Unable to access casting functionality. Please check your browser settings and try again."
+        );
       }
     } else {
       console.warn("Presentation API is not supported in this browser");
+      alert(
+        "Casting is not supported in this browser. Please use Chrome or Edge for casting functionality."
+      );
     }
   };
 
