@@ -1,3 +1,5 @@
+/* global MediaSession */
+
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Hls from "hls.js";
 import {
@@ -19,6 +21,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { debounce } from "lodash";
 import CategoriesPage from "./CategoriesPage";
+import Loading from "./Loading";
 
 // Custom Image Component (replaces next/image)
 const Image = ({ src, alt, width, height, className, fill }) => {
@@ -51,6 +54,7 @@ export default function OnPlayer() {
 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showLogo, setShowLogo] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -235,28 +239,75 @@ export default function OnPlayer() {
 
     if ("presentation" in navigator) {
       try {
-        const availableDevices =
-          await navigator.mediaDevices.enumerateDevices();
-        const presentationDevices = availableDevices.filter(
-          (device) =>
-            device.kind === "videoinput" || device.kind === "audioinput"
-        );
+        const presentationRequest = new PresentationRequest([
+          currentChannel.url,
+        ]);
+        const availableDisplays = await presentationRequest.getAvailability();
 
-        if (presentationDevices.length > 0) {
-          // Logic to connect to the selected device
-          const presentationRequest = new PresentationRequest([
-            currentChannel.url,
-          ]);
-          const connection = await presentationRequest.start();
-          console.log("Connected to casting device:", connection);
+        console.log("Available displays:", availableDisplays.value); // Debugging log
+
+        if (availableDisplays.value) {
+          // Show available devices
+          const display = await presentationRequest.show();
+          display.addEventListener("close", () => {
+            console.log("Presentation closed");
+          });
+
+          // Load the media on the selected display
+          const media = new MediaStream();
+          const videoTrack = videoRef.current
+            .captureStream()
+            .getVideoTracks()[0];
+          media.addTrack(videoTrack);
+
+          // Check if MediaSession is supported
+          if ("MediaSession" in window) {
+            const mediaSession = new MediaSession();
+            mediaSession.metadata = new MediaMetadata({
+              title: currentChannel.name,
+              artist: "Your Artist Name", // Replace with actual artist name
+              album: "Your Album Name", // Replace with actual album name
+              artwork: [
+                {
+                  src: currentChannel.logo || "/placeholder.svg",
+                  sizes: "96x96",
+                  type: "image/png",
+                },
+              ],
+            });
+
+            mediaSession.playbackState = "playing";
+            mediaSession.setPositionState({
+              duration: videoRef.current.duration,
+              playbackRate: 1,
+              position: videoRef.current.currentTime,
+              state: isPlaying ? "playing" : "paused",
+            });
+          } else {
+            console.warn("MediaSession API is not supported in this browser");
+            alert("MediaSession API is not supported in this browser.");
+          }
+
+          // Start casting the media
+          const castSession = await display.start(media);
+          console.log("Casting to:", castSession);
         } else {
-          console.warn("No presentation devices found.");
+          console.warn("No presentation displays available.");
+          alert(
+            "No casting devices found. Please ensure your devices are turned on and connected to the same network."
+          );
         }
       } catch (error) {
-        console.error("Error accessing media devices:", error);
+        console.error("Error accessing presentation API:", error);
+        alert(
+          "Unable to access casting functionality. Please check your browser settings and try again."
+        );
       }
     } else {
       console.warn("Presentation API is not supported in this browser");
+      alert(
+        "Casting is not supported in this browser. Please use Chrome or Edge for casting functionality."
+      );
     }
   };
 
@@ -301,9 +352,17 @@ export default function OnPlayer() {
     setShowSidebar(false);
   }, [currentChannel]); // This will run whenever currentChannel changes
 
+  useEffect(() => {
+    // Simulate loading for demonstration
+    const timer = setTimeout(() => {
+      setLoading(false); // Set loading to false after 2 seconds
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div
-      className="min-h-screen bg-[#0b0f19] px-4 flex flex-col items-center justify-start"
+      className="min-h-screen bg-[#0b0f19] px-1 flex flex-col items-center justify-start"
       onTouchMove={handleTouchMove}
     >
       {/* Sidebar Toggle Button */}
@@ -427,14 +486,14 @@ export default function OnPlayer() {
             <div className="relative w-full h-full ">
               <video
                 ref={videoRef}
-                className={`flex-1 mt-28 p-2 ${
+                className={`flex-1 mt-28 p-1 rounded-md border-2 border-yellow-300  ${
                   isFullScreen ? "w-screen h-screen" : "w-auto h-auto "
                 }`}
                 controls={false}
                 autoPlay
                 playsInline
               />
-              <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
+              <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
                 <Image
                   src={currentChannel.logo || "/placeholder.svg"}
                   alt={currentChannel.name}
@@ -442,9 +501,7 @@ export default function OnPlayer() {
                   height={32}
                   className="rounded-md"
                 />
-                <div>
-                  <h3 className="font-medium text-sm">{currentChannel.name}</h3>
-                </div>
+                <div></div>
               </div>
             </div>
           ) : (
@@ -452,14 +509,14 @@ export default function OnPlayer() {
               <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-pulse">
                 <Play size={64} className="text-white ml-2" />
               </div>
-              <p className="text-white text-xl font-semibold">onplay....</p>
+              <p className="text-white text-xl font-semibold">loading...</p>
             </div>
           )}
         </div>
 
         {/* Controls Below the Video Player */}
         {currentChannel && (
-          <div className="bg-gradient-to-r from-blue-600 to-red-1000 backdrop-blur-md p-4 flex justify-center space-x-4">
+          <div className="bg-gradient-to-r from-blue-900 to-red-900 backdrop-blur-md p-4 flex justify-center space-x-4 mt-4 rounded-full shadow-[0_4px_20px_rgba(0,2,3,0.9)]">
             <button
               onClick={togglePlayPause}
               className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_20px_rgba(0,0,0,0.9)] active:shadow-[2px_20px_rgba(0,0,0,0.9)]"
@@ -550,6 +607,46 @@ export default function OnPlayer() {
             />
           </div>
         </div>
+      )}
+
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <video
+            ref={videoRef}
+            className="w-full max-w-2xl"
+            controls
+            autoPlay
+            src="your-video-url.mp4"
+            playsInline
+          >
+            Your browser does not support the video tag.
+          </video>
+          <div className="flex space-x-4 mt-4">
+            <button onClick={togglePlayPause} className="p-2">
+              {isPlaying ? (
+                <Pause className="w-6 h-6 text-yellow-300" />
+              ) : (
+                <Play className="w-6 h-6 text-yellow-300" />
+              )}
+            </button>
+            <button onClick={toggleMute} className="p-2">
+              {isMuted ? (
+                <VolumeX className="w-6 h-6 text-yellow-300" />
+              ) : (
+                <Volume2 className="w-6 h-6 text-yellow-300" />
+              )}
+            </button>
+            <button onClick={toggleFullscreen} className="p-2">
+              {isFullScreen ? (
+                <Minimize2 className="w-6 h-6 text-yellow-300" />
+              ) : (
+                <Maximize2 className="w-6 h-6 text-yellow-300" />
+              )}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
