@@ -1,6 +1,16 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Play, Star, Clock, TrendingUp, ChevronRight } from "lucide-react";
+import {
+  Play,
+  Star,
+  Clock,
+  TrendingUp,
+  ChevronRight,
+  Cast,
+  RefreshCw,
+} from "lucide-react";
 
 const Image = ({ src, alt, width, height, className, fill }) => {
   return (
@@ -16,97 +26,110 @@ const Image = ({ src, alt, width, height, className, fill }) => {
 };
 
 const categories = [
-  { id: 1, name: "Sports", icon: TrendingUp },
-  { id: 2, name: "Movies", icon: Play },
-  { id: 3, name: "News", icon: Clock },
+  { id: 1, name: "All Sports", icon: TrendingUp },
+  { id: 2, name: "Football", icon: Play },
+  { id: 3, name: "Basketball", icon: Clock },
+  { id: 4, name: "Tennis", icon: Star },
 ];
 
-const liveMatches = [
-  {
-    id: 1,
-    teams: "Manchester United vs Arsenal",
-    time: "Live",
-    league: "Premier League",
-    thumbnail:
-      "https://i2-prod.football.london/arsenal-fc/article16986685.ece/ALTERNATES/s1200/0_Man-United-Arsenal.png",
-    viewerCount: "124K",
-  },
-  {
-    id: 2,
-    teams: "Lakers vs Warriors",
-    time: "Starting in 20min",
-    league: "NBA",
-    thumbnail:
-      "https://cdn.nba.com/manage/2023/05/GettyImages-1252880603-1568x977.jpg",
-    viewerCount: "89K",
-  },
-  {
-    id: 3,
-    teams: "Real Madrid vs Barcelona",
-    time: "Today 20:45",
-    league: "La Liga",
-    thumbnail: "https://notjustok.com/wp-content/uploads/2022/10/images-1.jpeg",
-    viewerCount: "203K",
-  },
-];
+export default function CategoriesPage({ onChannelSelect, onCast }) {
+  const [sportsChannels, setSportsChannels] = useState([]);
+  const [filteredChannels, setFilteredChannels] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("All Sports");
+  const [refreshTime, setRefreshTime] = useState(30);
 
-const popularMovies = [
-  {
-    id: 1,
-    title: "The Dark Knight",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    rating: "9.0",
-    year: "2008",
-    duration: "2h 32min",
-  },
-  {
-    id: 2,
-    title: "Inception",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    rating: "8.8",
-    year: "2010",
-    duration: "2h 28min",
-  },
-  {
-    id: 3,
-    title: "Interstellar",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    rating: "8.6",
-    year: "2014",
-    duration: "2h 49min",
-  },
-];
+  const fetchChannels = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        "https://raw.githubusercontent.com/dtankdempse/daddylive-m3u/refs/heads/main/playlist.m3u8"
+      );
+      const text = await response.text();
+      const lines = text.split("\n");
+      const parsedChannels = [];
 
-const currentNews = [
-  {
-    id: 1,
-    headline: "Breaking: Major Sports Event Announcement",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    time: "2 hours ago",
-    source: "Sports News",
-  },
-  {
-    id: 2,
-    headline: "Exclusive: Behind the Scenes of Upcoming Blockbuster",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    time: "4 hours ago",
-    source: "Entertainment Weekly",
-  },
-];
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].startsWith("#EXTINF")) {
+          const info = lines[i];
+          const url = lines[i + 1];
+          const nameMatch = info.match(/tvg-name="([^"]+)"/);
+          const logoMatch = info.match(/tvg-logo="([^"]+)"/);
+          const groupMatch = info.match(/group-title="([^"]+)"/);
+          const tvgIdMatch = info.match(/tvg-id="([^"]+)"/);
 
-export default function CategoriesPage() {
+          if (nameMatch && url) {
+            parsedChannels.push({
+              name: nameMatch[1],
+              url: url.trim(),
+              logo: logoMatch ? logoMatch[1] : "",
+              group: groupMatch ? groupMatch[1] : "Unknown",
+              tvgId: tvgIdMatch ? tvgIdMatch[1] : "",
+              isLive: Math.random() > 0.5,
+              viewerCount: Math.floor(Math.random() * 100000) + 1000,
+              startTime: new Date(
+                Date.now() + Math.random() * 7200000
+              ).toISOString(),
+            });
+          }
+        }
+      }
+
+      const sports = parsedChannels.filter(
+        (channel) =>
+          channel.group.toLowerCase().includes("sport") ||
+          channel.name.toLowerCase().includes("sport") ||
+          channel.name.toLowerCase().includes("football")
+      );
+      setSportsChannels(sports);
+      setFilteredChannels(sports);
+    } catch (error) {
+      console.error("Failed to fetch channels:", error);
+      setError("Failed to load channels. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChannels();
+    const interval = setInterval(fetchChannels, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRefreshTime((prev) => (prev > 0 ? prev - 1 : 30));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategory === "All Sports") {
+      setFilteredChannels(sportsChannels);
+    } else {
+      setFilteredChannels(
+        sportsChannels.filter((channel) =>
+          channel.name.toLowerCase().includes(selectedCategory.toLowerCase())
+        )
+      );
+    }
+  }, [selectedCategory, sportsChannels]);
+
+  const getTimeUntilStart = (startTime) => {
+    const diff = new Date(startTime) - new Date();
+    const minutes = Math.floor(diff / 60000);
+    return minutes > 0 ? `Starts in ${minutes}m` : "Live";
+  };
+
   return (
-    <div className="min-h-screen bg-[#0b0f19]">
+    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
       {/* Featured Content */}
       <div className="relative h-[70vh] mb-8">
         <div className="absolute inset-0">
           <Image
-            src="https://th.bing.com/th/id/OIP.xFhwHZ3o0vDEh1revb4prgAAAA?rs=1&pid=ImgDetMain"
+            src="https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg"
             alt="Featured content"
             fill
             className="object-cover"
@@ -115,7 +138,7 @@ export default function CategoriesPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#0b0f19] via-transparent to-transparent" />
         </div>
         <div className="absolute bottom-0 left-0 p-8 max-w-2xl">
-          <span className="inline-block px-2 py-1 bg-blue-500 text-white text-sm font-medium rounded mb-4">
+          <span className="inline-block px-2 py-1 bg-purple-500 text-white text-sm font-medium rounded mb-4">
             Featured
           </span>
           <h1 className="text-5xl font-bold mb-4 text-white">
@@ -125,15 +148,24 @@ export default function CategoriesPage() {
             Experience the ultimate showdown live from Wembley Stadium. Don't
             miss a moment of this historic match.
           </p>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors">
+          <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-all duration-300 shadow-lg shadow-purple-500/30">
             <Play className="w-5 h-5" /> Watch Now
           </button>
         </div>
       </div>
 
-      <div className="container mx-auto ">
+      <div className="container mx-auto px-4">
+        {/* Auto-refresh indicator */}
+        <div className="flex items-center justify-end mb-4 text-gray-400">
+          <RefreshCw
+            className={`w-4 h-4 mr-2 ${
+              refreshTime === 30 ? "animate-spin" : ""
+            }`}
+          />
+        </div>
+
         {/* Categories */}
-        <div className="w-full whitespace-nowrap mb-8 overflow-x-auto">
+        <div className="w-full whitespace-nowrap mb-8 overflow-x-auto scrollbar-hide">
           <div className="flex space-x-4">
             {categories.map((category) => {
               const Icon = category.icon;
@@ -141,7 +173,12 @@ export default function CategoriesPage() {
                 <motion.button
                   key={category.id}
                   whileHover={{ scale: 1.05 }}
-                  className="inline-flex items-center gap-2 px-5 py-3 bg-[#1c2231] rounded-lg text-white hover:bg-[#262d40] transition-colors"
+                  onClick={() => setSelectedCategory(category.name)}
+                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white transition-all duration-200 ${
+                    selectedCategory === category.name
+                      ? "bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/30"
+                      : "bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600"
+                  }`}
                 >
                   <Icon className="w-5 h-5" />
                   {category.name}
@@ -155,50 +192,69 @@ export default function CategoriesPage() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-white">Live Sports</h2>
-            <button className="text-blue-400 hover:text-blue-300 flex items-center">
+            <button className="text-purple-400 hover:text-purple-300 flex items-center">
               See All <ChevronRight className="w-4 h-4 ml-1" />
             </button>
           </div>
-          <div className="w-full overflow-x-auto">
-            <div className="flex gap-4">
-              {liveMatches.map((match) => (
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+          ) : error ? (
+            <div className="text-red-500 text-center py-8">{error}</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredChannels.map((channel) => (
                 <motion.div
-                  key={match.id}
+                  key={channel.tvgId}
                   whileHover={{ scale: 1.02 }}
-                  className="relative flex-none w-[400px]"
+                  className="group"
                 >
-                  <div className="bg-[#1c2231] rounded-lg overflow-hidden">
+                  <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
                     <div className="relative aspect-video">
                       <Image
-                        src={match.thumbnail || "/placeholder.svg"}
-                        alt={match.teams}
+                        src={channel.logo || "/placeholder.svg"}
+                        alt={channel.name}
                         fill
                         className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                       <div className="absolute top-2 left-2 px-2 py-1 bg-red-600 rounded text-sm font-medium text-white">
-                        {match.time}
+                        {channel.isLive
+                          ? "Live"
+                          : getTimeUntilStart(channel.startTime)}
                       </div>
                       <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 rounded text-sm text-white">
-                        {match.viewerCount} watching
+                        {channel.viewerCount.toLocaleString()} watching
                       </div>
                     </div>
                     <div className="p-4">
-                      <div className="text-sm text-blue-400 mb-1">
-                        {match.league}
+                      <div className="text-sm text-purple-400 mb-1">
+                        {channel.group}
                       </div>
-                      <h3 className="font-semibold text-white mb-4">
-                        {match.teams}
+                      <h3 className="font-semibold text-white mb-4 truncate">
+                        {channel.name}
                       </h3>
-                      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">
-                        Watch Now
-                      </button>
+                      <div className="flex justify-between">
+                        <button
+                          onClick={() => onChannelSelect(channel)}
+                          className="flex-1 mr-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-2 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg shadow-purple-500/20"
+                        >
+                          <Play className="w-4 h-4 mr-2" /> Watch
+                        </button>
+                        <button
+                          onClick={() => onCast(channel)}
+                          className="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors"
+                        >
+                          <Cast className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
             </div>
-          </div>
+          )}
         </section>
 
         {/* Popular Movies */}
@@ -207,46 +263,44 @@ export default function CategoriesPage() {
             <h2 className="text-2xl font-semibold text-white">
               Popular Movies
             </h2>
-            <button className="text-blue-400 hover:text-blue-300 flex items-center">
+            <button className="text-purple-400 hover:text-purple-300 flex items-center">
               Browse All <ChevronRight className="w-4 h-4 ml-1" />
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularMovies.map((movie) => (
+            {[1, 2, 3].map((movie) => (
               <motion.div
-                key={movie.id}
+                key={movie}
                 whileHover={{ scale: 1.02 }}
                 className="group"
               >
-                <div className="bg-[#1c2231] rounded-lg overflow-hidden">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
                   <div className="relative aspect-[16/9]">
                     <Image
-                      src={movie.thumbnail || "/placeholder.svg"}
-                      alt={movie.title}
+                      src="https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg"
+                      alt="Movie thumbnail"
                       fill
                       className="object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                      <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform shadow-lg shadow-purple-500/30">
                         <Play className="w-5 h-5" /> Play Now
                       </button>
                     </div>
                   </div>
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-white">
-                        {movie.title}
-                      </h3>
+                      <h3 className="font-semibold text-white">Movie Title</h3>
                       <div className="flex items-center text-yellow-500">
                         <Star className="w-4 h-4 fill-current mr-1" />
-                        <span className="text-sm">{movie.rating}</span>
+                        <span className="text-sm">9.0</span>
                       </div>
                     </div>
                     <div className="flex items-center text-sm text-gray-400">
-                      <span>{movie.year}</span>
+                      <span>2023</span>
                       <span className="mx-2">•</span>
-                      <span>{movie.duration}</span>
+                      <span>2h 30min</span>
                     </div>
                   </div>
                 </div>
@@ -259,22 +313,22 @@ export default function CategoriesPage() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-white">Latest News</h2>
-            <button className="text-blue-400 hover:text-blue-300 flex items-center">
+            <button className="text-purple-400 hover:text-purple-300 flex items-center">
               More News <ChevronRight className="w-4 h-4 ml-1" />
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {currentNews.map((news) => (
+            {[1, 2].map((news) => (
               <motion.div
-                key={news.id}
+                key={news}
                 whileHover={{ scale: 1.02 }}
                 className="group"
               >
-                <div className="bg-[#1c2231] rounded-lg overflow-hidden">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
                   <div className="relative aspect-[2/1]">
                     <Image
-                      src={news.thumbnail || "/placeholder.svg"}
-                      alt={news.headline}
+                      src="https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg"
+                      alt="News thumbnail"
                       fill
                       className="object-cover"
                     />
@@ -282,12 +336,12 @@ export default function CategoriesPage() {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-white mb-2">
-                      {news.headline}
+                      Breaking Sports News Headline
                     </h3>
                     <div className="flex items-center text-sm text-gray-400">
-                      <span>{news.source}</span>
+                      <span>Sports News</span>
                       <span className="mx-2">•</span>
-                      <span>{news.time}</span>
+                      <span>2 hours ago</span>
                     </div>
                   </div>
                 </div>

@@ -179,10 +179,23 @@ export default function OnPlayer() {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      videoRef.current?.requestFullscreen();
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      } else if (videoRef.current.webkitRequestFullscreen) {
+        // iOS Safari
+        videoRef.current.webkitRequestFullscreen();
+      } else if (videoRef.current.webkitEnterFullscreen) {
+        // iOS Safari alternative
+        videoRef.current.webkitEnterFullscreen();
+      }
       setIsFullScreen(true);
     } else {
-      document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        // iOS Safari
+        document.webkitExitFullscreen();
+      }
       setIsFullScreen(false);
     }
   };
@@ -215,9 +228,15 @@ export default function OnPlayer() {
       videoRef.current &&
       "webkitShowPlaybackTargetPicker" in videoRef.current
     ) {
-      // Use AirPlay
-      videoRef.current.webkitShowPlaybackTargetPicker();
-      console.log("AirPlay picker shown");
+      try {
+        await videoRef.current.webkitShowPlaybackTargetPicker();
+        console.log("AirPlay picker shown");
+      } catch (error) {
+        console.error("Error showing AirPlay picker:", error);
+        alert(
+          "Failed to open AirPlay. Please check your device settings and try again."
+        );
+      }
       return;
     }
 
@@ -225,39 +244,20 @@ export default function OnPlayer() {
     if ("presentation" in navigator) {
       try {
         const presentationRequest = new PresentationRequest([
-          videoRef.current?.src || "",
+          currentChannel.url,
         ]);
-        const availableDisplays = await presentationRequest.getAvailability();
+        const connection = await presentationRequest.start();
+        console.log("Presentation started:", connection);
 
-        console.log("Available displays:", availableDisplays.value);
-
-        if (availableDisplays.value) {
-          const connection = await presentationRequest.start();
-          console.log("Presentation started:", connection);
-
-          // Start casting the media
-          if (videoRef.current) {
-            const media = new MediaStream();
-            const videoTrack = videoRef.current
-              .captureStream()
-              .getVideoTracks()[0];
-            media.addTrack(videoTrack);
-
-            await connection.send(
-              JSON.stringify({ type: "media", stream: media })
-            );
-            console.log("Media sent to presentation display");
-          }
-        } else {
-          console.warn("No presentation displays available.");
-          alert(
-            "No casting devices found. Please ensure your devices are turned on and connected to the same network."
-          );
-        }
+        // Send the video URL to the presentation display
+        await connection.send(
+          JSON.stringify({ type: "play", url: currentChannel.url })
+        );
+        console.log("Video URL sent to presentation display");
       } catch (error) {
         console.error("Error accessing presentation API:", error);
         alert(
-          "Unable to access casting functionality. Please check your browser settings and try again."
+          "Unable to start casting. Please check your browser settings and try again."
         );
       }
     } else {
@@ -276,7 +276,7 @@ export default function OnPlayer() {
         const presentationRequest = new PresentationRequest([
           currentChannel.url,
         ]);
-        await presentationRequest.start(); // Removed unused `connection` variable
+        await presentationRequest.start();
         console.log(
           `Started presentation on device: ${device.label || device}`
         );
@@ -303,13 +303,24 @@ export default function OnPlayer() {
     // Simulate fetching available devices
     const devices = ["Device 1", "Device 2"]; // Replace with actual device fetching logic
     setAvailableDevices(devices);
-  }, [setAvailableDevices]);
+  }, []);
 
   // Reset logo and menu button visibility when component mounts
   useEffect(() => {
     setShowLogo(true);
     setShowSidebar(false);
   }, [currentChannel]); // This will run whenever currentChannel changes
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   return (
     <div
@@ -431,44 +442,54 @@ export default function OnPlayer() {
       </AnimatePresence>
 
       {/* Video Player */}
-      <div className="flex-1 h-56 flex flex-col">
-        <div className="flex-1 bg-black relative group">
+      <div
+        className={`flex-1 h-56 flex flex-col ${
+          isFullScreen ? "fixed inset-0 z-50 bg-black" : ""
+        }`}
+      >
+        <div
+          className={`flex-1 bg-black relative group ${
+            isFullScreen ? "w-screen h-screen" : ""
+          }`}
+        >
           {currentChannel ? (
-            <div className="relative w-full h-full ">
+            <div className="relative w-full h-full">
               <video
                 ref={videoRef}
-                className={`flex-1 mt-28 p-1 w-full rounded-md border-2 border-yellow-300  ${
-                  isFullScreen ? "w-screen h-screen" : "w-auto h-auto "
+                className={`w-full h-full object-contain ${
+                  isFullScreen
+                    ? "absolute inset-0"
+                    : "mt-28 p-1 rounded-md border-2 border-yellow-300"
                 }`}
                 controls={false}
                 autoPlay
                 playsInline
               />
-              <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-black to-transparent opacity-50" />
-              <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
-                <Image
-                  src={currentChannel.logo || "/placeholder.svg"}
-                  alt={currentChannel.name}
-                  width={32}
-                  height={32}
-                  className="rounded-md"
-                />
-                <div></div>
-              </div>
+              {!isFullScreen && (
+                <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
+                  <Image
+                    src={currentChannel.logo || "/placeholder.svg"}
+                    alt={currentChannel.name}
+                    width={32}
+                    height={32}
+                    className="rounded-md"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
               <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-pulse">
                 <Play size={64} className="text-white ml-2" />
               </div>
-              <p className="text-white text-xl font-semibold"></p>
+              <p className="text-white text-xl font-semibold">Loading...</p>
             </div>
           )}
         </div>
 
-        {/* Controls Below the Video Player */}
-        {currentChannel && (
-          <div className="bg-gradient-to-r from-blue-800 to-red-1000 backdrop-blur-md p-4 flex justify-center space-x-4 mt-6 rounded-full shadow-[0_4px_0px_rgba(0,2,3,0.9)]">
+        {/* Controls */}
+        {currentChannel && !isFullScreen && (
+          <div className="bg-gradient-to-r from-blue-900 to-red-900 backdrop-blur-md p-4 flex justify-center space-x-4 mt-4 rounded-full shadow-[0_4px_20px_rgba(0,2,3,0.9)]">
             <button
               onClick={togglePlayPause}
               className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_20px_rgba(0,0,0,0.9)] active:shadow-[2px_20px_rgba(0,0,0,0.9)]"
@@ -508,15 +529,9 @@ export default function OnPlayer() {
             >
               <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
               {isFullScreen ? (
-                <Minimize2
-                  size={24}
-                  className="w-6 h-6 text-yellow-300 glow relative z-10"
-                />
+                <Minimize2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
               ) : (
-                <Maximize2
-                  size={24}
-                  className="w-6 h-6 text-yellow-300 glow relative z-10"
-                />
+                <Maximize2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
               )}
             </button>
             <button
