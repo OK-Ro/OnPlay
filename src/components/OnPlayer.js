@@ -179,39 +179,6 @@ export default function OnPlayer() {
     }
   };
 
-  const toggleFullscreen = () => {
-    if (videoRef.current) {
-      if (!isFullScreen) {
-        if (videoRef.current.requestFullscreen) {
-          videoRef.current.requestFullscreen();
-        } else if (videoRef.current.mozRequestFullScreen) {
-          // Firefox
-          videoRef.current.mozRequestFullScreen();
-        } else if (videoRef.current.webkitRequestFullscreen) {
-          // Chrome, Safari and Opera
-          videoRef.current.webkitRequestFullscreen();
-        } else if (videoRef.current.msRequestFullscreen) {
-          // IE/Edge
-          videoRef.current.msRequestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          // Firefox
-          document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-          // Chrome, Safari and Opera
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          // IE/Edge
-          document.msExitFullscreen();
-        }
-      }
-      setIsFullScreen(!isFullScreen);
-    }
-  };
-
   const toggleFavorite = (tvgId) => {
     setFavorites((prev) =>
       prev.includes(tvgId)
@@ -235,30 +202,44 @@ export default function OnPlayer() {
   const toggleCast = async () => {
     if (typeof window === "undefined") return;
 
+    // Check if AirPlay is available
+    if (
+      videoRef.current &&
+      "webkitShowPlaybackTargetPicker" in videoRef.current
+    ) {
+      // Use AirPlay
+      videoRef.current.webkitShowPlaybackTargetPicker();
+      console.log("AirPlay picker shown");
+      return;
+    }
+
+    // If AirPlay is not available, try using the Presentation API
     if ("presentation" in navigator) {
       try {
         const presentationRequest = new PresentationRequest([
-          currentChannel.url,
+          videoRef.current?.src || "",
         ]);
         const availableDisplays = await presentationRequest.getAvailability();
 
-        console.log("Available displays:", availableDisplays.value); // Debugging log
+        console.log("Available displays:", availableDisplays.value);
 
         if (availableDisplays.value) {
-          const display = await presentationRequest.show();
-          display.addEventListener("close", () => {
-            console.log("Presentation closed");
-          });
+          const connection = await presentationRequest.start();
+          console.log("Presentation started:", connection);
 
           // Start casting the media
-          const media = new MediaStream();
-          const videoTrack = videoRef.current
-            .captureStream()
-            .getVideoTracks()[0];
-          media.addTrack(videoTrack);
+          if (videoRef.current) {
+            const media = new MediaStream();
+            const videoTrack = videoRef.current
+              .captureStream()
+              .getVideoTracks()[0];
+            media.addTrack(videoTrack);
 
-          const castSession = await display.start(media);
-          console.log("Casting to:", castSession);
+            await connection.send(
+              JSON.stringify({ type: "media", stream: media })
+            );
+            console.log("Media sent to presentation display");
+          }
         } else {
           console.warn("No presentation displays available.");
           alert(
@@ -272,9 +253,11 @@ export default function OnPlayer() {
         );
       }
     } else {
-      console.warn("Presentation API is not supported in this browser");
+      console.warn(
+        "Neither AirPlay nor Presentation API is supported in this browser"
+      );
       alert(
-        "Casting is not supported in this browser. Please use Chrome or Edge for casting functionality."
+        "Casting is not supported in this browser. Please use a compatible browser or device for casting functionality."
       );
     }
   };
@@ -285,19 +268,63 @@ export default function OnPlayer() {
         const presentationRequest = new PresentationRequest([
           currentChannel.url,
         ]);
-        await presentationRequest.start(); // Removed unused `connection` variable
+        const connection = await presentationRequest.start();
         console.log(
           `Started presentation on device: ${device.label || device}`
         );
+
+        // Use the connection to send the current channel information
+        await connection.send(
+          JSON.stringify({
+            type: "changeChannel",
+            channelUrl: currentChannel.url,
+            channelName: currentChannel.name,
+          })
+        );
+
+        // Set up a listener for messages from the presentation display
+        connection.addEventListener("message", (event) => {
+          const message = JSON.parse(event.data);
+          if (message.type === "playbackStatus") {
+            console.log(`Playback status on cast device: ${message.status}`);
+          }
+        });
+
+        // Store the connection for later use (you might want to add this to your component's state)
+        // setActiveCastConnection(connection);
       } catch (error) {
         console.error("Error starting presentation:", error);
+        alert("Failed to start casting. Please try again.");
       }
     } else {
       console.log(`Selected device: ${device}`);
+      alert(
+        "Casting is not supported on this browser. Please use a compatible browser."
+      );
     }
     setShowDevices(false);
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      videoRef.current?.requestFullscreen();
+      setIsFullScreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
   const handleTouchMove = (event) => {
     // Your logic for handling touch move events
   };
