@@ -114,14 +114,6 @@ export default function CategoriesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
-      {/* Navigation */}
-      <nav className="bg-[#1c2231] py-4 px-8 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Catchup</h1>
-        <div className="flex items-center space-x-4">
-          <div className="w-8 h-8 bg-purple-500 rounded-full"></div>
-        </div>
-      </nav>
-
       {/* Featured Content */}
       <div className="relative h-[70vh] mb-8">
         <div className="absolute inset-0">

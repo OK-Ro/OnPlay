@@ -225,55 +225,59 @@ export default function OnPlayer() {
   const toggleCast = async () => {
     if (typeof window === "undefined") return;
 
+    // Check if AirPlay is available
     if (
-      "presentation" in navigator &&
-      "defaultRequest" in PresentationRequest
-    ) {
-      try {
-        const presentationRequest = new PresentationRequest([
-          currentChannel.url,
-        ]);
-        const connection = await presentationRequest.start();
-        console.log("Presentation started:", connection);
-
-        // Send both audio and video to the presentation display
-        await connection.send(
-          JSON.stringify({
-            type: "play",
-            url: currentChannel.url,
-            audioUrl: currentChannel.url,
-            videoType: "application/x-mpegURL", // Specify the video type for HLS streams
-          })
-        );
-        console.log("Video and audio URLs sent to presentation display");
-
-        // Add an error listener to the connection
-        connection.onerror = (error) => {
-          console.error("Presentation connection error:", error);
-          alert("An error occurred during casting. Please try again.");
-        };
-      } catch (error) {
-        console.error("Error accessing presentation API:", error);
-        alert(
-          "Unable to start casting. Please check your browser settings and try again."
-        );
-      }
-    } else if (
       videoRef.current &&
       "webkitShowPlaybackTargetPicker" in videoRef.current
     ) {
+      // Use AirPlay
+      videoRef.current.webkitShowPlaybackTargetPicker();
+      console.log("AirPlay picker shown");
+      return;
+    }
+
+    // If AirPlay is not available, try using the Presentation API
+    if ("presentation" in navigator) {
       try {
-        await videoRef.current.webkitShowPlaybackTargetPicker();
-        console.log("AirPlay picker shown");
+        const presentationRequest = new PresentationRequest([
+          videoRef.current?.src || "",
+        ]);
+        const availableDisplays = await presentationRequest.getAvailability();
+
+        console.log("Available displays:", availableDisplays.value);
+
+        if (availableDisplays.value) {
+          const connection = await presentationRequest.start();
+          console.log("Presentation started:", connection);
+
+          // Start casting the media
+          if (videoRef.current) {
+            const media = new MediaStream();
+            const videoTrack = videoRef.current
+              .captureStream()
+              .getVideoTracks()[0];
+            media.addTrack(videoTrack);
+
+            await connection.send(
+              JSON.stringify({ type: "media", stream: media })
+            );
+            console.log("Media sent to presentation display");
+          }
+        } else {
+          console.warn("No presentation displays available.");
+          alert(
+            "No casting devices found. Please ensure your devices are turned on and connected to the same network."
+          );
+        }
       } catch (error) {
-        console.error("Error showing AirPlay picker:", error);
+        console.error("Error accessing presentation API:", error);
         alert(
-          "Failed to open AirPlay. Please check your device settings and try again."
+          "Unable to access casting functionality. Please check your browser settings and try again."
         );
       }
     } else {
       console.warn(
-        "Neither Presentation API nor AirPlay is supported in this browser"
+        "Neither AirPlay nor Presentation API is supported in this browser"
       );
       alert(
         "Casting is not supported in this browser. Please use a compatible browser or device for casting functionality."
