@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Play,
@@ -9,7 +9,6 @@ import {
   TrendingUp,
   ChevronRight,
   Cast,
-  RefreshCw,
 } from "lucide-react";
 
 const Image = ({ src, alt, width, height, className, fill }) => {
@@ -26,110 +25,108 @@ const Image = ({ src, alt, width, height, className, fill }) => {
 };
 
 const categories = [
-  { id: 1, name: "All Sports", icon: TrendingUp },
-  { id: 2, name: "Football", icon: Play },
-  { id: 3, name: "Basketball", icon: Clock },
-  { id: 4, name: "Tennis", icon: Star },
+  { id: 1, name: "Sports", icon: TrendingUp },
+  { id: 2, name: "Movies", icon: Play },
+  { id: 3, name: "News", icon: Clock },
+  { id: 4, name: "TV Shows", icon: Star },
 ];
 
-export default function CategoriesPage({ onChannelSelect, onCast }) {
-  const [sportsChannels, setSportsChannels] = useState([]);
-  const [filteredChannels, setFilteredChannels] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("All Sports");
-  const [refreshTime, setRefreshTime] = useState(30);
+const liveMatches = [
+  {
+    id: 1,
+    teams: "Manchester United vs Arsenal",
+    time: "Live",
+    league: "Premier League",
+    thumbnail:
+      "https://i2-prod.football.london/arsenal-fc/article16986685.ece/ALTERNATES/s1200/0_Man-United-Arsenal.png",
+    viewerCount: "124K",
+  },
+  {
+    id: 2,
+    teams: "Lakers vs Warriors",
+    time: "Starting in 20min",
+    league: "NBA",
+    thumbnail:
+      "https://cdn.nba.com/manage/2023/05/GettyImages-1252880603-1568x977.jpg",
+    viewerCount: "89K",
+  },
+  {
+    id: 3,
+    teams: "Real Madrid vs Barcelona",
+    time: "Today 20:45",
+    league: "La Liga",
+    thumbnail: "https://notjustok.com/wp-content/uploads/2022/10/images-1.jpeg",
+    viewerCount: "203K",
+  },
+];
 
-  const fetchChannels = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        "https://raw.githubusercontent.com/dtankdempse/daddylive-m3u/refs/heads/main/playlist.m3u8"
-      );
-      const text = await response.text();
-      const lines = text.split("\n");
-      const parsedChannels = [];
+const popularMovies = [
+  {
+    id: 1,
+    title: "The Dark Knight",
+    thumbnail:
+      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
+    rating: "9.0",
+    year: "2008",
+    duration: "2h 32min",
+  },
+  {
+    id: 2,
+    title: "Inception",
+    thumbnail:
+      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
+    rating: "8.8",
+    year: "2010",
+    duration: "2h 28min",
+  },
+  {
+    id: 3,
+    title: "Interstellar",
+    thumbnail:
+      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
+    rating: "8.6",
+    year: "2014",
+    duration: "2h 49min",
+  },
+];
 
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].startsWith("#EXTINF")) {
-          const info = lines[i];
-          const url = lines[i + 1];
-          const nameMatch = info.match(/tvg-name="([^"]+)"/);
-          const logoMatch = info.match(/tvg-logo="([^"]+)"/);
-          const groupMatch = info.match(/group-title="([^"]+)"/);
-          const tvgIdMatch = info.match(/tvg-id="([^"]+)"/);
+const currentNews = [
+  {
+    id: 1,
+    headline: "Breaking: Major Sports Event Announcement",
+    thumbnail:
+      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
+    time: "2 hours ago",
+    source: "Sports News",
+  },
+  {
+    id: 2,
+    headline: "Exclusive: Behind the Scenes of Upcoming Blockbuster",
+    thumbnail:
+      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
+    time: "4 hours ago",
+    source: "Entertainment Weekly",
+  },
+];
 
-          if (nameMatch && url) {
-            parsedChannels.push({
-              name: nameMatch[1],
-              url: url.trim(),
-              logo: logoMatch ? logoMatch[1] : "",
-              group: groupMatch ? groupMatch[1] : "Unknown",
-              tvgId: tvgIdMatch ? tvgIdMatch[1] : "",
-              isLive: Math.random() > 0.5,
-              viewerCount: Math.floor(Math.random() * 100000) + 1000,
-              startTime: new Date(
-                Date.now() + Math.random() * 7200000
-              ).toISOString(),
-            });
-          }
-        }
-      }
-
-      const sports = parsedChannels.filter(
-        (channel) =>
-          channel.group.toLowerCase().includes("sport") ||
-          channel.name.toLowerCase().includes("sport") ||
-          channel.name.toLowerCase().includes("football")
-      );
-      setSportsChannels(sports);
-      setFilteredChannels(sports);
-    } catch (error) {
-      console.error("Failed to fetch channels:", error);
-      setError("Failed to load channels. Please try again later.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchChannels();
-    const interval = setInterval(fetchChannels, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRefreshTime((prev) => (prev > 0 ? prev - 1 : 30));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (selectedCategory === "All Sports") {
-      setFilteredChannels(sportsChannels);
-    } else {
-      setFilteredChannels(
-        sportsChannels.filter((channel) =>
-          channel.name.toLowerCase().includes(selectedCategory.toLowerCase())
-        )
-      );
-    }
-  }, [selectedCategory, sportsChannels]);
-
-  const getTimeUntilStart = (startTime) => {
-    const diff = new Date(startTime) - new Date();
-    const minutes = Math.floor(diff / 60000);
-    return minutes > 0 ? `Starts in ${minutes}m` : "Live";
-  };
+export default function CategoriesPage() {
+  const [selectedCategory, setSelectedCategory] = useState("Sports");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
+      {/* Navigation */}
+      <nav className="bg-[#1c2231] py-4 px-8 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-white">Catchup</h1>
+        <div className="flex items-center space-x-4">
+          <div className="w-8 h-8 bg-purple-500 rounded-full"></div>
+        </div>
+      </nav>
+
       {/* Featured Content */}
       <div className="relative h-[70vh] mb-8">
         <div className="absolute inset-0">
           <Image
-            src="https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg"
+            src="https://th.bing.com/th/id/OIP.xFhwHZ3o0vDEh1revb4prgAAAA?rs=1&pid=ImgDetMain"
             alt="Featured content"
             fill
             className="object-cover"
@@ -155,15 +152,6 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
       </div>
 
       <div className="container mx-auto px-4">
-        {/* Auto-refresh indicator */}
-        <div className="flex items-center justify-end mb-4 text-gray-400">
-          <RefreshCw
-            className={`w-4 h-4 mr-2 ${
-              refreshTime === 30 ? "animate-spin" : ""
-            }`}
-          />
-        </div>
-
         {/* Categories */}
         <div className="w-full whitespace-nowrap mb-8 overflow-x-auto scrollbar-hide">
           <div className="flex space-x-4">
@@ -196,65 +184,49 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
               See All <ChevronRight className="w-4 h-4 ml-1" />
             </button>
           </div>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-            </div>
-          ) : error ? (
-            <div className="text-red-500 text-center py-8">{error}</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredChannels.map((channel) => (
-                <motion.div
-                  key={channel.tvgId}
-                  whileHover={{ scale: 1.02 }}
-                  className="group"
-                >
-                  <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
-                    <div className="relative aspect-video">
-                      <Image
-                        src={channel.logo || "/placeholder.svg"}
-                        alt={channel.name}
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      <div className="absolute top-2 left-2 px-2 py-1 bg-red-600 rounded text-sm font-medium text-white">
-                        {channel.isLive
-                          ? "Live"
-                          : getTimeUntilStart(channel.startTime)}
-                      </div>
-                      <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 rounded text-sm text-white">
-                        {channel.viewerCount.toLocaleString()} watching
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {liveMatches.map((match) => (
+              <motion.div
+                key={match.id}
+                whileHover={{ scale: 1.02 }}
+                className="group"
+              >
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
+                  <div className="relative aspect-video">
+                    <Image
+                      src={match.thumbnail || "/placeholder.svg"}
+                      alt={match.teams}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-red-600 rounded text-sm font-medium text-white">
+                      {match.time}
                     </div>
-                    <div className="p-4">
-                      <div className="text-sm text-purple-400 mb-1">
-                        {channel.group}
-                      </div>
-                      <h3 className="font-semibold text-white mb-4 truncate">
-                        {channel.name}
-                      </h3>
-                      <div className="flex justify-between">
-                        <button
-                          onClick={() => onChannelSelect(channel)}
-                          className="flex-1 mr-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-2 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg shadow-purple-500/20"
-                        >
-                          <Play className="w-4 h-4 mr-2" /> Watch
-                        </button>
-                        <button
-                          onClick={() => onCast(channel)}
-                          className="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors"
-                        >
-                          <Cast className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 rounded text-sm text-white">
+                      {match.viewerCount} watching
                     </div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                  <div className="p-4">
+                    <div className="text-sm text-purple-400 mb-1">
+                      {match.league}
+                    </div>
+                    <h3 className="font-semibold text-white mb-4 truncate">
+                      {match.teams}
+                    </h3>
+                    <div className="flex justify-between">
+                      <button className="flex-1 mr-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-2 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                        <Play className="w-4 h-4 mr-2" /> Watch
+                      </button>
+                      <button className="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors">
+                        <Cast className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </section>
 
         {/* Popular Movies */}
@@ -268,17 +240,17 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((movie) => (
+            {popularMovies.map((movie) => (
               <motion.div
-                key={movie}
+                key={movie.id}
                 whileHover={{ scale: 1.02 }}
                 className="group"
               >
                 <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
                   <div className="relative aspect-[16/9]">
                     <Image
-                      src="https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg"
-                      alt="Movie thumbnail"
+                      src={movie.thumbnail || "/placeholder.svg"}
+                      alt={movie.title}
                       fill
                       className="object-cover"
                     />
@@ -291,16 +263,18 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
                   </div>
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-white">Movie Title</h3>
+                      <h3 className="font-semibold text-white">
+                        {movie.title}
+                      </h3>
                       <div className="flex items-center text-yellow-500">
                         <Star className="w-4 h-4 fill-current mr-1" />
-                        <span className="text-sm">9.0</span>
+                        <span className="text-sm">{movie.rating}</span>
                       </div>
                     </div>
                     <div className="flex items-center text-sm text-gray-400">
-                      <span>2023</span>
+                      <span>{movie.year}</span>
                       <span className="mx-2">•</span>
-                      <span>2h 30min</span>
+                      <span>{movie.duration}</span>
                     </div>
                   </div>
                 </div>
@@ -310,6 +284,7 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
         </section>
 
         {/* News Section */}
+
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-white">Latest News</h2>
@@ -318,17 +293,17 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2].map((news) => (
+            {currentNews.map((news) => (
               <motion.div
-                key={news}
+                key={news.id}
                 whileHover={{ scale: 1.02 }}
                 className="group"
               >
                 <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
                   <div className="relative aspect-[2/1]">
                     <Image
-                      src="https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg"
-                      alt="News thumbnail"
+                      src={news.thumbnail || "/placeholder.svg"}
+                      alt={news.headline}
                       fill
                       className="object-cover"
                     />
@@ -336,12 +311,12 @@ export default function CategoriesPage({ onChannelSelect, onCast }) {
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-white mb-2">
-                      Breaking Sports News Headline
+                      {news.headline}
                     </h3>
                     <div className="flex items-center text-sm text-gray-400">
-                      <span>Sports News</span>
+                      <span>{news.source}</span>
                       <span className="mx-2">•</span>
-                      <span>2 hours ago</span>
+                      <span>{news.time}</span>
                     </div>
                   </div>
                 </div>
