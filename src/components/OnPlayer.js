@@ -14,6 +14,7 @@ import {
   Menu,
   Minimize2,
   Cast,
+  PictureInPicture,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -305,9 +306,10 @@ export default function OnPlayer() {
     setShowDevices(false);
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullScreen = () => {
+    console.log("Full screen button clicked");
     if (!document.fullscreenElement) {
-      videoRef.current?.requestFullscreen();
+      videoRef.current.requestFullscreen();
       setIsFullScreen(true);
     } else {
       document.exitFullscreen();
@@ -325,6 +327,7 @@ export default function OnPlayer() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
+
   const handleTouchMove = (event) => {
     // Your logic for handling touch move events
   };
@@ -353,6 +356,27 @@ export default function OnPlayer() {
       setLoading(false); // Set loading to false after 2 seconds
     }, 2000);
     return () => clearTimeout(timer);
+  }, []);
+
+  const togglePictureInPicture = async () => {
+    if (videoRef.current) {
+      if (document.pictureInPictureElement) {
+        // If already in PiP, exit PiP
+        await document.exitPictureInPicture();
+      } else {
+        // Request PiP
+        await videoRef.current.requestPictureInPicture();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.addEventListener("loadedmetadata", () => {
+        console.log("Video metadata loaded.");
+        // Optionally enable the PiP button here if you have a state to manage button availability
+      });
+    }
   }, []);
 
   return (
@@ -475,29 +499,41 @@ export default function OnPlayer() {
       </AnimatePresence>
 
       {/* Video Player */}
-      <div className="flex-1 h-56 flex flex-col">
-        <div className="flex-1 bg-black relative group">
+      <div
+        className={`flex-1 h-56 flex flex-col ${
+          isFullScreen ? "fixed inset-0 z-50 bg-black" : ""
+        }`}
+      >
+        <div
+          className={`flex-1 bg-black relative group ${
+            isFullScreen ? "w-screen h-screen" : ""
+          }`}
+        >
           {currentChannel ? (
-            <div className="relative w-full h-full ">
+            <div className="relative w-full h-full">
               <video
                 ref={videoRef}
-                className={`flex-1 mt-28 p-1 rounded-md border-2 border-yellow-300  ${
-                  isFullScreen ? "w-screen h-screen" : "w-auto h-auto "
+                className={`w-full h-full object-contain ${
+                  isFullScreen
+                    ? "absolute inset-0"
+                    : "mt-28 p-1 rounded-md border-2 border-yellow-300"
                 }`}
                 controls={false}
                 autoPlay
                 playsInline
+                src={currentChannel.url}
               />
-              <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
-                <Image
-                  src={currentChannel.logo || "/placeholder.svg"}
-                  alt={currentChannel.name}
-                  width={32}
-                  height={32}
-                  className="rounded-md"
-                />
-                <div></div>
-              </div>
+              {!isFullScreen && (
+                <div className="absolute top-4 left-4 bg-black/20 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
+                  <Image
+                    src={currentChannel.logo || "/placeholder.svg"}
+                    alt={currentChannel.name}
+                    width={32}
+                    height={32}
+                    className="rounded-md"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full space-y-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
@@ -510,58 +546,46 @@ export default function OnPlayer() {
         </div>
 
         {/* Controls Below the Video Player */}
-        {currentChannel && (
+        {currentChannel && !isFullScreen && (
           <div className="bg-gradient-to-r from-blue-900 to-red-900 backdrop-blur-md p-4 flex justify-center space-x-4 mt-4 rounded-full shadow-[0_4px_20px_rgba(0,2,3,0.9)]">
             <button
               onClick={togglePlayPause}
-              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_20px_rgba(0,0,0,0.9)] active:shadow-[2px_20px_rgba(0,0,0,0.9)]"
+              className="text-white hover:text-gray-300"
             >
-              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
-              {isPlaying ? (
-                <Pause className="w-6 h-6 text-yellow-300 glow relative z-10" />
-              ) : (
-                <Play className="w-6 h-6 text-yellow-300 glow relative z-10" />
-              )}
+              {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </button>
-            <button
-              onClick={rewind}
-              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.9)] active:shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
-            >
-              <Rewind className="w-6 h-6 text-yellow-300 glow" />
+            <button onClick={rewind} className="text-white hover:text-gray-300">
+              <Rewind size={24} />
             </button>
             <button
               onClick={fastForward}
-              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
+              className="text-white hover:text-gray-300"
             >
-              <FastForward className="w-6 h-6 text-yellow-300 glow" />
+              <FastForward size={24} />
             </button>
             <button
               onClick={toggleMute}
-              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
+              className="text-white hover:text-gray-300"
             >
-              {isMuted ? (
-                <VolumeX className="w-6 h-6 text-yellow-300 glow" />
-              ) : (
-                <Volume2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
-              )}
+              {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
             </button>
             <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden"
+              onClick={toggleFullScreen}
+              className="text-white hover:text-gray-300"
             >
-              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
-              {isFullScreen ? (
-                <Minimize2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
-              ) : (
-                <Maximize2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
-              )}
+              {isFullScreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+            </button>
+            <button
+              onClick={togglePictureInPicture}
+              className="text-white hover:text-gray-300"
+            >
+              <PictureInPicture size={24} />
             </button>
             <button
               onClick={toggleCast}
-              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden"
+              className="text-white hover:text-gray-300"
             >
-              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
-              <Cast className="w-6 h-6 text-yellow-300 glow relative z-10" />
+              <Cast size={24} />
             </button>
           </div>
         )}
@@ -633,7 +657,7 @@ export default function OnPlayer() {
                 <Volume2 className="w-6 h-6 text-yellow-300" />
               )}
             </button>
-            <button onClick={toggleFullscreen} className="p-2">
+            <button onClick={toggleFullScreen} className="p-2">
               {isFullScreen ? (
                 <Minimize2 className="w-6 h-6 text-yellow-300" />
               ) : (
