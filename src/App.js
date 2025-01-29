@@ -1,9 +1,9 @@
-import OnPlayer from "./components/OnPlayer";
+import CategoriesPage from "./components/CategoriesPage";
 
 function App() {
   return (
     <div className="App">
-      <OnPlayer />
+      <CategoriesPage />
     </div>
   );
 }
