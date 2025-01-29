@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Hls from "hls.js";
 import {
@@ -106,7 +104,7 @@ export default function OnPlayer() {
         hls.loadSource(currentChannel.url);
         hls.attachMedia(videoRef.current);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          checkVideoPlayback();
+          videoRef.current.play();
           setIsPlaying(true);
         });
       } else if (
@@ -114,7 +112,7 @@ export default function OnPlayer() {
       ) {
         videoRef.current.src = currentChannel.url;
         videoRef.current.addEventListener("loadedmetadata", () => {
-          checkVideoPlayback();
+          videoRef.current.play();
           setIsPlaying(true);
         });
       }
@@ -230,9 +228,15 @@ export default function OnPlayer() {
       videoRef.current &&
       "webkitShowPlaybackTargetPicker" in videoRef.current
     ) {
-      // Use AirPlay
-      videoRef.current.webkitShowPlaybackTargetPicker();
-      console.log("AirPlay picker shown");
+      try {
+        await videoRef.current.webkitShowPlaybackTargetPicker();
+        console.log("AirPlay picker shown");
+      } catch (error) {
+        console.error("Error showing AirPlay picker:", error);
+        alert(
+          "Failed to open AirPlay. Please check your device settings and try again."
+        );
+      }
       return;
     }
 
@@ -240,39 +244,20 @@ export default function OnPlayer() {
     if ("presentation" in navigator) {
       try {
         const presentationRequest = new PresentationRequest([
-          videoRef.current?.src || "",
+          currentChannel.url,
         ]);
-        const availableDisplays = await presentationRequest.getAvailability();
+        const connection = await presentationRequest.start();
+        console.log("Presentation started:", connection);
 
-        console.log("Available displays:", availableDisplays.value);
-
-        if (availableDisplays.value) {
-          const connection = await presentationRequest.start();
-          console.log("Presentation started:", connection);
-
-          // Start casting the media
-          if (videoRef.current) {
-            const media = new MediaStream();
-            const videoTrack = videoRef.current
-              .captureStream()
-              .getVideoTracks()[0];
-            media.addTrack(videoTrack);
-
-            await connection.send(
-              JSON.stringify({ type: "media", stream: media })
-            );
-            console.log("Media sent to presentation display");
-          }
-        } else {
-          console.warn("No presentation displays available.");
-          alert(
-            "No casting devices found. Please ensure your devices are turned on and connected to the same network."
-          );
-        }
+        // Send the video URL to the presentation display
+        await connection.send(
+          JSON.stringify({ type: "play", url: currentChannel.url })
+        );
+        console.log("Video URL sent to presentation display");
       } catch (error) {
         console.error("Error accessing presentation API:", error);
         alert(
-          "Unable to access casting functionality. Please check your browser settings and try again."
+          "Unable to start casting. Please check your browser settings and try again."
         );
       }
     } else {
@@ -324,7 +309,7 @@ export default function OnPlayer() {
   useEffect(() => {
     setShowLogo(true);
     setShowSidebar(false);
-  }, []); // Updated useEffect dependency array
+  }, [currentChannel]); // This will run whenever currentChannel changes
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -336,24 +321,6 @@ export default function OnPlayer() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
-
-  const checkVideoPlayback = () => {
-    if (videoRef.current) {
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then((_) => {
-            console.log("Video playback started successfully");
-          })
-          .catch((error) => {
-            console.error("Video playback was prevented:", error);
-            alert(
-              "Video playback failed. This may be due to autoplay restrictions or codec issues. Please try interacting with the video player directly."
-            );
-          });
-      }
-    }
-  };
 
   return (
     <div
@@ -525,51 +492,54 @@ export default function OnPlayer() {
           <div className="bg-gradient-to-r from-blue-900 to-red-900 backdrop-blur-md p-4 flex justify-center space-x-4 mt-4 rounded-full shadow-[0_4px_20px_rgba(0,2,3,0.9)]">
             <button
               onClick={togglePlayPause}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_20px_rgba(0,0,0,0.9)] active:shadow-[2px_20px_rgba(0,0,0,0.9)]"
             >
+              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
               {isPlaying ? (
-                <Pause className="w-6 h-6 text-yellow-300" />
+                <Pause className="w-6 h-6 text-yellow-300 glow relative z-10" />
               ) : (
-                <Play className="w-6 h-6 text-yellow-300" />
+                <Play className="w-6 h-6 text-yellow-300 glow relative z-10" />
               )}
             </button>
             <button
               onClick={rewind}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.9)] active:shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
             >
-              <Rewind className="w-6 h-6 text-yellow-300" />
+              <Rewind className="w-6 h-6 text-yellow-300 glow" />
             </button>
             <button
               onClick={fastForward}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
             >
-              <FastForward className="w-6 h-6 text-yellow-300" />
+              <FastForward className="w-6 h-6 text-yellow-300 glow" />
             </button>
             <button
               onClick={toggleMute}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
             >
               {isMuted ? (
-                <VolumeX className="w-6 h-6 text-yellow-300" />
+                <VolumeX className="w-6 h-6 text-yellow-300 glow" />
               ) : (
-                <Volume2 className="w-6 h-6 text-yellow-300" />
+                <Volume2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
               )}
             </button>
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden"
             >
+              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
               {isFullScreen ? (
-                <Minimize2 className="w-6 h-6 text-yellow-300" />
+                <Minimize2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
               ) : (
-                <Maximize2 className="w-6 h-6 text-yellow-300" />
+                <Maximize2 className="w-6 h-6 text-yellow-300 glow relative z-10" />
               )}
             </button>
             <button
               onClick={toggleCast}
-              className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="p-2 rounded-full border-2 border-yellow-300 transition-colors bg-white/20 hover:bg-white/30 shadow-lg shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:shadow-[0_2px_10px_rgba(0,0,0,0.5)] relative overflow-hidden"
             >
-              <Cast className="w-6 h-6 text-yellow-300" />
+              <div className="absolute inset-0 bg-black opacity-20 shadow-inner"></div>
+              <Cast className="w-6 h-6 text-yellow-300 glow relative z-10" />
             </button>
           </div>
         )}
