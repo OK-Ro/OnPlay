@@ -1,322 +1,145 @@
-"use client";
-
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Play,
-  Star,
-  Clock,
-  TrendingUp,
-  ChevronRight,
-  Cast,
-} from "lucide-react";
-
-const Image = ({ src, alt, width, height, className, fill }) => {
-  return (
-    <img
-      src={src || "/placeholder.svg"}
-      alt={alt}
-      width={width}
-      height={height}
-      className={className}
-      style={fill ? { objectFit: "cover", width: "100%", height: "100%" } : {}}
-    />
-  );
-};
-
-const categories = [
-  { id: 1, name: "Sports", icon: TrendingUp },
-  { id: 2, name: "Movies", icon: Play },
-  { id: 3, name: "News", icon: Clock },
-  { id: 4, name: "TV Shows", icon: Star },
-];
-
-const liveMatches = [
-  {
-    id: 1,
-    teams: "Manchester United vs Arsenal",
-    time: "Live",
-    league: "Premier League",
-    thumbnail:
-      "https://i2-prod.football.london/arsenal-fc/article16986685.ece/ALTERNATES/s1200/0_Man-United-Arsenal.png",
-    viewerCount: "124K",
-  },
-  {
-    id: 2,
-    teams: "Lakers vs Warriors",
-    time: "Starting in 20min",
-    league: "NBA",
-    thumbnail:
-      "https://cdn.nba.com/manage/2023/05/GettyImages-1252880603-1568x977.jpg",
-    viewerCount: "89K",
-  },
-  {
-    id: 3,
-    teams: "Real Madrid vs Barcelona",
-    time: "Today 20:45",
-    league: "La Liga",
-    thumbnail: "https://notjustok.com/wp-content/uploads/2022/10/images-1.jpeg",
-    viewerCount: "203K",
-  },
-];
-
-const popularMovies = [
-  {
-    id: 1,
-    title: "The Dark Knight",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    rating: "9.0",
-    year: "2008",
-    duration: "2h 32min",
-  },
-  {
-    id: 2,
-    title: "Inception",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    rating: "8.8",
-    year: "2010",
-    duration: "2h 28min",
-  },
-  {
-    id: 3,
-    title: "Interstellar",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    rating: "8.6",
-    year: "2014",
-    duration: "2h 49min",
-  },
-];
-
-const currentNews = [
-  {
-    id: 1,
-    headline: "Breaking: Major Sports Event Announcement",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    time: "2 hours ago",
-    source: "Sports News",
-  },
-  {
-    id: 2,
-    headline: "Exclusive: Behind the Scenes of Upcoming Blockbuster",
-    thumbnail:
-      "https://sjc.microlink.io/v2LmQDwsgrGWiusuRafiK6vDRmEtWy_EBvLrlXg-0c8ouKgIwkVNyuAxVY9dIKSv7r9EeOZYPG048Uj9IqLh_w.jpeg",
-    time: "4 hours ago",
-    source: "Entertainment Weekly",
-  },
-];
+import React, { useState, useEffect, useRef } from "react";
+import Hls from "hls.js"; // Import hls.js
+import { Play, Pause, Cast, X } from "lucide-react";
 
 export default function CategoriesPage() {
-  const [selectedCategory, setSelectedCategory] = useState("Sports");
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [livSportsNews, setLivSportsNews] = useState([]);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    setLivSportsNews([
+      {
+        name: "Sky Sports News",
+        url: "https://xyzdddd.mizhls.ru/lb/premium366/index.m3u8", // Your HLS stream URL
+        logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-news-uk.png",
+        group: "SPORTS (DADDY LIVE)",
+        tvgId: "SkySp.News.HD.uk",
+      },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    if (isVideoOpen && videoRef.current) {
+      const videoElement = videoRef.current;
+
+      // Check if Hls.js is supported
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(livSportsNews[0].url);
+        hls.attachMedia(videoElement);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          console.log("Manifest parsed!");
+        });
+
+        // Clean up the HLS instance when the component unmounts
+        return () => {
+          hls.destroy();
+        };
+      }
+      // Fallback for browsers with native HLS support
+      else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+        videoElement.src = livSportsNews[0].url;
+      }
+    }
+  }, [isVideoOpen, livSportsNews]);
+
+  useEffect(() => {
+    if (isVideoOpen && videoRef.current) {
+      videoRef.current.play();
+    }
+  }, [isVideoOpen]);
+
+  const togglePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleWatchNow = () => {
+    setIsVideoOpen(true);
+    setIsPlaying(true);
+  };
+
+  const handleClosePlayer = () => {
+    setIsVideoOpen(false); // Close the player
+    setIsPlaying(false); // Pause the video
+    if (videoRef.current) {
+      videoRef.current.pause(); // Ensure video is paused
+      videoRef.current.currentTime = 0; // Reset the video to the beginning
+    }
+  };
+
+  const handleCast = () => {
+    // Implement casting functionality here (e.g., Google Cast)
+    alert("Casting functionality is not implemented yet.");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
       {/* Featured Content */}
       <div className="relative h-[70vh] mb-8">
         <div className="absolute inset-0">
-          <Image
+          <img
             src="https://th.bing.com/th/id/OIP.xFhwHZ3o0vDEh1revb4prgAAAA?rs=1&pid=ImgDetMain"
             alt="Featured content"
-            fill
-            className="object-cover"
+            className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-transparent to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0b0f19] via-transparent to-transparent" />
         </div>
         <div className="absolute bottom-0 left-0 p-8 max-w-2xl">
-          <span className="inline-block px-2 py-1 bg-purple-500 text-white text-sm font-medium rounded mb-4">
-            Featured
-          </span>
           <h1 className="text-5xl font-bold mb-4 text-white">
-            Champions League Final
+            Live Sports News
           </h1>
           <p className="text-lg text-gray-300 mb-6">
-            Experience the ultimate showdown live from Wembley Stadium. Don't
-            miss a moment of this historic match.
+            Stay tuned for the latest scores, highlights, and breaking news from
+            the world of sports.
           </p>
-          <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-all duration-300 shadow-lg shadow-purple-500/30">
+          <button
+            onClick={handleWatchNow}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-all duration-300 shadow-lg shadow-purple-500/30"
+          >
             <Play className="w-5 h-5" /> Watch Now
           </button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4">
-        {/* Categories */}
-        <div className="w-full whitespace-nowrap mb-8 overflow-x-auto scrollbar-hide">
-          <div className="flex space-x-4">
-            {categories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <motion.button
-                  key={category.id}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white transition-all duration-200 ${
-                    selectedCategory === category.name
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/30"
-                      : "bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {category.name}
-                </motion.button>
-              );
-            })}
+      {/* Full-Screen Video Player Modal */}
+      {isVideoOpen && livSportsNews.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
+          <div className="relative w-full h-full">
+            <button
+              onClick={handleClosePlayer}
+              className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
+            >
+              <X />
+            </button>
+            <video ref={videoRef} className="w-full h-full" autoPlay controls />
+            <div className="absolute bottom-4 left-4 flex gap-4">
+              <button
+                onClick={togglePlayPause}
+                className="text-white bg-gray-800 p-2 rounded-full"
+              >
+                {isPlaying ? <Pause /> : <Play />}
+              </button>
+              <button
+                onClick={handleCast}
+                className="text-white bg-gray-800 p-2 rounded-full"
+              >
+                <Cast />
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Live Sports */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-white">Live Sports</h2>
-            <button className="text-purple-400 hover:text-purple-300 flex items-center">
-              See All <ChevronRight className="w-4 h-4 ml-1" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {liveMatches.map((match) => (
-              <motion.div
-                key={match.id}
-                whileHover={{ scale: 1.02 }}
-                className="group"
-              >
-                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
-                  <div className="relative aspect-video">
-                    <Image
-                      src={match.thumbnail || "/placeholder.svg"}
-                      alt={match.teams}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <div className="absolute top-2 left-2 px-2 py-1 bg-red-600 rounded text-sm font-medium text-white">
-                      {match.time}
-                    </div>
-                    <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 rounded text-sm text-white">
-                      {match.viewerCount} watching
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="text-sm text-purple-400 mb-1">
-                      {match.league}
-                    </div>
-                    <h3 className="font-semibold text-white mb-4 truncate">
-                      {match.teams}
-                    </h3>
-                    <div className="flex justify-between">
-                      <button className="flex-1 mr-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-2 rounded-lg transition-all duration-200 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                        <Play className="w-4 h-4 mr-2" /> Watch
-                      </button>
-                      <button className="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors">
-                        <Cast className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Popular Movies */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-white">
-              Popular Movies
-            </h2>
-            <button className="text-purple-400 hover:text-purple-300 flex items-center">
-              Browse All <ChevronRight className="w-4 h-4 ml-1" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularMovies.map((movie) => (
-              <motion.div
-                key={movie.id}
-                whileHover={{ scale: 1.02 }}
-                className="group"
-              >
-                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
-                  <div className="relative aspect-[16/9]">
-                    <Image
-                      src={movie.thumbnail || "/placeholder.svg"}
-                      alt={movie.title}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform shadow-lg shadow-purple-500/30">
-                        <Play className="w-5 h-5" /> Play Now
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-white">
-                        {movie.title}
-                      </h3>
-                      <div className="flex items-center text-yellow-500">
-                        <Star className="w-4 h-4 fill-current mr-1" />
-                        <span className="text-sm">{movie.rating}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-400">
-                      <span>{movie.year}</span>
-                      <span className="mx-2">•</span>
-                      <span>{movie.duration}</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* News Section */}
-
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-white">Latest News</h2>
-            <button className="text-purple-400 hover:text-purple-300 flex items-center">
-              More News <ChevronRight className="w-4 h-4 ml-1" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {currentNews.map((news) => (
-              <motion.div
-                key={news.id}
-                whileHover={{ scale: 1.02 }}
-                className="group"
-              >
-                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg">
-                  <div className="relative aspect-[2/1]">
-                    <Image
-                      src={news.thumbnail || "/placeholder.svg"}
-                      alt={news.headline}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-white mb-2">
-                      {news.headline}
-                    </h3>
-                    <div className="flex items-center text-sm text-gray-400">
-                      <span>{news.source}</span>
-                      <span className="mx-2">•</span>
-                      <span>{news.time}</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      </div>
+      )}
     </div>
   );
 }
