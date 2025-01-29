@@ -18,7 +18,7 @@ import {
 
 import { motion, AnimatePresence } from "framer-motion";
 import { debounce } from "lodash";
-import CategoriesPage from "./CategoriesPage";
+// import CategoriesPage from "./CategoriesPage";
 
 // Custom Image Component (replaces next/image)
 const Image = ({ src, alt, width, height, className, fill }) => {
@@ -545,10 +545,10 @@ export default function OnPlayer() {
         )}
       </div>
 
-      {/* Categories Component Container */}
+      {/* Categories Component Container
       <div className="w-full mt-6">
         <CategoriesPage />
-      </div>
+      </div> */}
 
       {/* Available Devices List */}
       {showDevices && (
