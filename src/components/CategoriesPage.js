@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Hls from "hls.js"; // Import hls.js
-import { Play, X } from "lucide-react";
+import { Play } from "lucide-react";
 import { Link } from "react-router-dom"; // Import Link for routing
 
 const categories = [
@@ -134,7 +134,7 @@ export default function CategoriesPage() {
               onClick={handleClosePlayer}
               className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
             >
-              <X />
+              X
             </button>
           </div>
         )}
