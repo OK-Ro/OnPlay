@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import Hls from "hls.js"; // Import hls.js
 import { Play } from "lucide-react";
 import { Link } from "react-router-dom"; // Import Link for routing
 
@@ -16,6 +15,7 @@ export default function CategoriesPage() {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    // Sample channel data
     setLivSportsNews([
       {
         name: "Sky Sports News",
@@ -26,32 +26,6 @@ export default function CategoriesPage() {
       },
     ]);
   }, []);
-
-  useEffect(() => {
-    if (isVideoOpen && videoRef.current) {
-      const videoElement = videoRef.current;
-
-      // Check if Hls.js is supported
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(livSportsNews[0].url);
-        hls.attachMedia(videoElement);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          console.log("Manifest parsed!");
-        });
-
-        // Clean up the HLS instance when the component unmounts
-        return () => {
-          hls.destroy();
-        };
-      }
-      // Fallback for browsers with native HLS support
-      else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
-        videoElement.src = livSportsNews[0].url;
-      }
-    }
-  }, [isVideoOpen, livSportsNews]);
 
   const handleWatchNow = () => {
     setIsVideoOpen(true);
@@ -128,7 +102,11 @@ export default function CategoriesPage() {
               className="w-full h-full"
               autoPlay
               controls // Enable default controls
-            />
+              playsInline // Ensure video plays inline on mobile devices
+            >
+              <source src={livSportsNews[0].url} type="application/x-mpegURL" />
+              Your browser does not support the video tag.
+            </video>
             {/* Close Button */}
             <button
               onClick={handleClosePlayer}
