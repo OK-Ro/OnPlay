@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import Hls from "hls.js"; // Import hls.js
-import { Play, Pause, Cast, X } from "lucide-react";
+import { Play, Pause, Cast, X, Maximize2, Minimize2 } from "lucide-react";
 
 export default function CategoriesPage() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [livSportsNews, setLivSportsNews] = useState([]);
   const videoRef = useRef(null);
+  const playerRef = useRef(null);
 
   useEffect(() => {
     setLivSportsNews([
@@ -77,6 +79,16 @@ export default function CategoriesPage() {
     }
   };
 
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      playerRef.current?.requestFullscreen();
+      setIsFullScreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullScreen(false);
+    }
+  };
+
   const toggleCast = async () => {
     if (typeof window === "undefined") return;
 
@@ -107,11 +119,8 @@ export default function CategoriesPage() {
 
           // Start casting the media
           if (videoRef.current) {
-            const media = new MediaStream();
-            const videoTrack = videoRef.current
-              .captureStream()
-              .getVideoTracks()[0];
-            media.addTrack(videoTrack);
+            const mediaStream = videoRef.current.captureStream();
+            const media = new MediaStream([...mediaStream.getTracks()]); // Capture both video and audio tracks
 
             await connection.send(
               JSON.stringify({ type: "media", stream: media })
@@ -143,7 +152,7 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
       {/* Featured Content */}
-      <div className="relative h-[70vh] mb-8">
+      <div className="relative h-[60vh] mb-8">
         <div className="absolute inset-0">
           <img
             src="https://th.bing.com/th/id/OIP.xFhwHZ3o0vDEh1revb4prgAAAA?rs=1&pid=ImgDetMain"
@@ -172,15 +181,18 @@ export default function CategoriesPage() {
 
       {/* Full-Screen Video Player Modal */}
       {isVideoOpen && livSportsNews.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
-          <div className="relative w-full h-full">
-            <button
-              onClick={handleClosePlayer}
-              className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
-            >
-              <X />
-            </button>
-            <video ref={videoRef} className="w-full h-full" autoPlay controls />
+        <div
+          ref={playerRef}
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center"
+        >
+          <video
+            ref={videoRef}
+            className="w-full h-full"
+            autoPlay
+            controls={!isFullScreen}
+          />
+          {/* Show controls only in fullscreen mode */}
+          {isFullScreen && (
             <div className="absolute bottom-4 left-4 flex gap-4">
               <button
                 onClick={togglePlayPause}
@@ -194,8 +206,20 @@ export default function CategoriesPage() {
               >
                 <Cast />
               </button>
+              <button
+                onClick={toggleFullScreen}
+                className="text-white bg-gray-800 p-2 rounded-full"
+              >
+                {isFullScreen ? <Minimize2 /> : <Maximize2 />}
+              </button>
+              <button
+                onClick={handleClosePlayer}
+                className="text-white bg-gray-800 p-2 rounded-full"
+              >
+                <X />
+              </button>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
