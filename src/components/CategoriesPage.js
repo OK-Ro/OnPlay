@@ -18,11 +18,11 @@ export default function CategoriesPage() {
     // Sample channel data
     setLivSportsNews([
       {
-        name: "Sky Sports News",
-        url: "https://xyzdddd.mizhls.ru/lb/premium366/index.m3u8", // Your HLS stream URL
-        logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-news-uk.png",
+        name: "TNT Sports 4",
+        url: "https://xyzdddd.mizhls.ru/lb/premium34/index.m3u8", // HLS stream URL
+        logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-4-uk.png?raw=true",
         group: "SPORTS (DADDY LIVE)",
-        tvgId: "SkySp.News.HD.uk",
+        tvgId: "TNT.Sports.4.HD.uk",
       },
     ]);
   }, []);
