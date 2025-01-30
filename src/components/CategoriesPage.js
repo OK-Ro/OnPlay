@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Play } from "lucide-react";
-import { Link } from "react-router-dom"; // Import Link for routing
+import { Link } from "react-router-dom";
+import Hls from "hls.js";
 
 const categories = [
   { id: 1, name: "Sports", icon: Play },
@@ -15,11 +16,10 @@ export default function CategoriesPage() {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    // Sample channel data
     setLivSportsNews([
       {
         name: "Sky Sports News",
-        url: "https://xyzdddd.mizhls.ru/lb/premium366/index.m3u8", // Your HLS stream URL
+        url: "https://xyzdddd.mizhls.ru/lb/premium366/index.m3u8",
         logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-news-uk.png",
         group: "SPORTS (DADDY LIVE)",
         tvgId: "SkySp.News.HD.uk",
@@ -29,19 +29,36 @@ export default function CategoriesPage() {
 
   const handleWatchNow = () => {
     setIsVideoOpen(true);
+    if (videoRef.current) {
+      const url = livSportsNews[0]?.url;
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(videoRef.current);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoRef.current.play();
+        });
+      } else if (
+        videoRef.current.canPlayType("application/vnd.apple.mpegurl")
+      ) {
+        videoRef.current.src = url;
+        videoRef.current.play();
+      } else {
+        console.error("HLS not supported");
+      }
+    }
   };
 
   const handleClosePlayer = () => {
-    setIsVideoOpen(false); // Close the player
+    setIsVideoOpen(false);
     if (videoRef.current) {
-      videoRef.current.pause(); // Ensure video is paused
-      videoRef.current.currentTime = 0; // Reset the video to the beginning
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
     }
   };
 
   return (
     <div className="w-full">
-      {/* Categories */}
       <div className="w-full whitespace-nowrap mb-8 overflow-x-auto scrollbar-hide">
         <div className="flex space-x-4">
           {categories.map((category) => {
@@ -49,8 +66,8 @@ export default function CategoriesPage() {
             return (
               <Link
                 key={category.id}
-                to={category.name === "TV" ? "/onplayer" : "#"} // Link to /onplayer if category is "TV"
-                onClick={() => setSelectedCategory(category.name)} // Set selected category
+                to={category.name === "TV" ? "/onplayer" : "#"}
+                onClick={() => setSelectedCategory(category.name)}
                 className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white transition-all duration-200 ${
                   selectedCategory === category.name
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/30"
@@ -66,7 +83,6 @@ export default function CategoriesPage() {
       </div>
 
       <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
-        {/* Featured Content */}
         <div className="relative h-[60vh] mb-8">
           <div className="absolute inset-0">
             <img
@@ -94,20 +110,14 @@ export default function CategoriesPage() {
           </div>
         </div>
 
-        {/* Full-Screen Video Player Modal */}
         {isVideoOpen && livSportsNews.length > 0 && (
           <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
             <video
               ref={videoRef}
               className="w-full h-full"
-              autoPlay
-              controls // Enable default controls
-              playsInline // Ensure video plays inline on mobile devices
-            >
-              <source src={livSportsNews[0].url} type="application/x-mpegURL" />
-              Your browser does not support the video tag.
-            </video>
-            {/* Close Button */}
+              controls
+              playsInline
+            />
             <button
               onClick={handleClosePlayer}
               className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
