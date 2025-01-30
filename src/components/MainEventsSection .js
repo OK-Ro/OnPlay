@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import Hls from "hls.js"; // Import hls.js for HLS support
+
 import { X } from "lucide-react"; // Import the X icon
 
 const events = [
@@ -81,40 +81,17 @@ export default function MainEventsSection() {
     }
   }, [currentSlide]);
 
-  // Handle "Watch Now" button click
-  const handleWatchNow = (url) => {
+  const handleWatchNow = () => {
     setIsVideoOpen(true);
-
-    // Use hls.js for HLS playback
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(videoRef.current);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        videoRef.current.play().catch((error) => {
-          console.error("Autoplay failed:", error);
-        });
-      });
-    } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-      // Native HLS support (e.g., Safari)
-      videoRef.current.src = url;
-      videoRef.current.play().catch((error) => {
-        console.error("Autoplay failed:", error);
-      });
-    } else {
-      console.error("HLS is not supported in this browser.");
-    }
   };
 
-  // Handle closing the video player
   const handleClosePlayer = () => {
-    setIsVideoOpen(false);
+    setIsVideoOpen(false); // Close the player
     if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      videoRef.current.pause(); // Ensure video is paused
+      videoRef.current.currentTime = 0; // Reset the video to the beginning
     }
   };
-
   return (
     <section className="mt-8 pb-8 md:mt-12 pl-6 p-4">
       {/* Header with "See All" Button */}
@@ -184,28 +161,25 @@ export default function MainEventsSection() {
       </div>
 
       {/* Video Player Modal */}
-      {isVideoOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-1000 z-50 flex flex-col">
-          <div className="flex justify-end p-4">
-            <button
-              onClick={handleClosePlayer}
-              className="text-white bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <video
-              ref={videoRef}
-              className="w-full h-full max-h-[80vh] object-contain"
-              controls
-              autoPlay
-              playsInline
-              muted // Ensure muted for autoplay on mobile devices
-            >
-              Your browser does not support the video tag.
-            </video>
-          </div>
+      {isVideoOpen && events.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
+          <video
+            ref={videoRef}
+            className="w-full h-full"
+            autoPlay
+            controls // Enable default controls
+            playsInline // Ensure video plays inline on mobile devices
+          >
+            <source src={events[0].url} type="application/x-mpegURL" />
+            Your browser does not support the video tag.
+          </video>
+          {/* Close Button */}
+          <button
+            onClick={handleClosePlayer}
+            className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
       )}
     </section>
