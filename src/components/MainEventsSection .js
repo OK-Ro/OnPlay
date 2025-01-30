@@ -124,7 +124,7 @@ export default function MainEventsSection() {
         </h2>
         <Link
           to="/all-events"
-          className="text-l l-2 md:text-base text-purple-500 hover:text-purple-400 transition-colors"
+          className="relative inline-block px-5 py-2 text-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:brightness-125 hover:shadow-purple-500/50 before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-purple-400 before:to-pink-400 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100"
         >
           See All
         </Link>
@@ -139,7 +139,7 @@ export default function MainEventsSection() {
             key={event.id}
             className="flex-shrink-0 w-full snap-center pr-2 transform transition-transform duration-500 hover:scale-105"
           >
-            <div className="relative h-[45vh] md:h-[60vh] rounded-xl overflow-hidden group">
+            <div className="relative h-[50vh] md:h-[60vh] rounded-xl overflow-hidden group">
               {/* Background Image */}
               <img
                 src={event.image}

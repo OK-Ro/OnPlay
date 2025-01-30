@@ -1,22 +1,24 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Tv, Newspaper, X, User } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Play, Pause, Volume2, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import MainEventsSection from "./MainEventsSection ";
-import Hls from "hls.js";
 
 const categories = [
-  { id: 1, name: "Sports", icon: Tv },
-  { id: 2, name: "News", icon: Newspaper },
-  { id: 3, name: "TV", icon: Tv },
+  { id: 1, name: "Sports", icon: Play },
+  { id: 2, name: "News", icon: Play },
+  { id: 3, name: "TV", icon: Play },
 ];
 
 export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState("Sports");
   const [isVideoOpen, setIsVideoOpen] = useState(false);
-  const [currentChannelIndex, setCurrentChannelIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [livSportsNews, setLivSportsNews] = useState([]);
   const videoRef = useRef(null);
-  const sliderRef = useRef(null);
 
   useEffect(() => {
     setLivSportsNews([
@@ -30,59 +32,8 @@ export default function CategoriesPage() {
     ]);
   }, []);
 
-  const livestreams = [
-    {
-      name: "TNT Sports 1",
-      url: "https://xyzdddd.mizhls.ru/lb/premium31/index.m3u8",
-      logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-1-uk.png?raw=true",
-      group: "SPORTS (DADDY LIVE)",
-      tvgId: "TNT.Sports.1.HD.uk",
-    },
-    {
-      name: "TNT Sports 2",
-      url: "https://xyzdddd.mizhls.ru/lb/premium32/index.m3u8",
-      logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-2-uk.png?raw=true",
-      group: "SPORTS (DADDY LIVE)",
-      tvgId: "TNT.Sports.2.HD.uk",
-    },
-    {
-      name: "TNT Sports 3",
-      url: "https://xyzdddd.mizhls.ru/lb/premium33/index.m3u8",
-      logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-3-uk.png?raw=true",
-      group: "SPORTS (DADDY LIVE)",
-      tvgId: "TNT.Sports.3.HD.uk",
-    },
-    {
-      name: "TNT Sports 4",
-      url: "https://xyzdddd.mizhls.ru/lb/premium34/index.m3u8",
-      logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-4-uk.png?raw=true",
-      group: "SPORTS (DADDY LIVE)",
-      tvgId: "TNT.Sports.4.HD.uk",
-    },
-    {
-      name: "Sky Sports F1",
-      url: "https://xyzdddd.mizhls.ru/lb/premium60/index.m3u8",
-      logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-f1-uk.png",
-      group: "SPORTS (DADDY LIVE)",
-      tvgId: "SkySp.F1.HD.uk",
-    },
-  ];
-
-  const handleWatchNow = (url) => {
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(videoRef.current);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        videoRef.current.play();
-      });
-    } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
-      // Native HLS support (e.g., Safari)
-      videoRef.current.src = url;
-      videoRef.current.play();
-    } else {
-      console.error("HLS is not supported in this browser.");
-    }
+  const handleWatchNow = () => {
+    setIsLoading(true);
     setIsVideoOpen(true);
   };
 
@@ -94,176 +45,185 @@ export default function CategoriesPage() {
     }
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const container = sliderRef.current;
-      const width = container.offsetWidth;
-      const scrollPosition = container.scrollLeft;
+  const togglePlayPause = useCallback(() => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  }, [isPlaying]);
 
-      const index = Math.floor(scrollPosition / width);
-      setCurrentChannelIndex(index);
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+      setVolume(newVolume);
+    }
+  };
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.onloadeddata = () => {
+        setIsLoading(false);
+      };
+      videoRef.current.onerror = () => {
+        setError("Failed to load the video. Please try again.");
+        setIsLoading(false);
+      };
+      videoRef.current.ontimeupdate = () => {
+        setCurrentTime(videoRef.current.currentTime);
+        setDuration(videoRef.current.duration);
+      };
+    }
+  }, [isVideoOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        togglePlayPause();
+      }
     };
 
-    const container = sliderRef.current;
-    container.addEventListener("scroll", handleScroll);
+    if (isVideoOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [isVideoOpen, togglePlayPause]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
-      <div className="max-w-[1920px] mx-auto px-1.5 md:px-6 lg:px-10">
-        <header className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center bg-gradient-to-r from-yellow-400 to-red-500 p-1 rounded-lg shadow-lg animate-blink">
-                <span className="text-white text-2xl font-extrabold">O</span>
-                <img
-                  src="https://i.pinimg.com/originals/37/97/d9/3797d93321ab72678a94ff686da5c773.png"
-                  alt="Logo Icon"
-                  className="w-6 h-6 ml-2"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="pt-4 md:pt-6">
-          <div className="flex space-x-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4">
-            {categories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <Link
-                  key={category.id}
-                  href={category.name === "TV" ? "/onplayer" : "#"}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className={`flex-shrink-0 snap-start ml-5 inline-flex items-center gap-1 px-5 py-3 rounded-xl text-white transition-all duration-200 ${
-                    selectedCategory === category.name
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/30"
-                      : "bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {category.name}
-                </Link>
-              );
-            })}
-          </div>
+    <div className="w-full">
+      {/* Categories */}
+      <div className="w-full whitespace-nowrap mb-8 overflow-x-auto scrollbar-hide">
+        <div className="flex space-x-4">
+          {categories.map((category) => {
+            const Icon = category.icon;
+            return (
+              <Link
+                key={category.id}
+                to={category.name === "TV" ? "/onplayer" : "#"}
+                onClick={() => setSelectedCategory(category.name)}
+                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white transition-all duration-200 ${
+                  selectedCategory === category.name
+                    ? "bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/30"
+                    : "bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {category.name}
+              </Link>
+            );
+          })}
         </div>
+      </div>
 
-        <div className="relative h-[50vh] md:h-[60vh] mt-4 b-4 rounded-xl overflow-hidden">
-          <img
-            src="https://i0.wp.com/www.benaventedigital.es/wp-content/uploads/2020/06/deporte-scaled.jpg?fit=2560%2C1440&ssl=1"
-            alt="Featured content"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0b0f19] via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 pl-6 pb-14 md:p-8 max-w-2xl">
-            <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
+        {/* Featured Content */}
+        <div className="relative h-[60vh] mb-8">
+          <div className="absolute inset-0">
+            <img
+              src="https://th.bing.com/th/id/OIP.xFhwHZ3o0vDEh1revb4prgAAAA?rs=1&pid=ImgDetMain"
+              alt="Featured content"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0f19] via-transparent to-transparent" />
+          </div>
+          <div className="absolute bottom-0 left-0 p-8 max-w-2xl">
+            <h1 className="text-5xl font-bold mb-4 text-white">
               Live Sports News
             </h1>
-            <p className="text-sm md:text-lg text-gray-300 mb-4 md:mb-6">
+            <p className="text-lg text-gray-300 mb-6">
               Stay tuned for the latest scores, highlights, and breaking news
               from the world of sports.
             </p>
             <button
-              onClick={() => handleWatchNow(livSportsNews[0]?.url)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 md:px-8 md:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-500/30"
+              onClick={handleWatchNow}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 transition-all duration-300 shadow-lg shadow-purple-500/30"
             >
-              Watch Now
+              <Play className="w-5 h-5" /> Watch Now
             </button>
           </div>
         </div>
 
-        <section className="mt-8 pb-8 md:mt-12">
-          <h2 className="text-xl ml-6 md:text-2xl font-semibold text-white mb-4">
-            Live Channels
-          </h2>
-          <div
-            ref={sliderRef}
-            className="ml-0.5 mr-0.5 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-6 px-6 p-6"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {livestreams.map((stream, index) => (
-              <div
-                key={stream.tvgId}
-                className="flex-shrink-0 w-[112%] snap-center pr-1.5"
-              >
-                <div
-                  className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg transition-transform hover:scale-105 cursor-pointer relative"
-                  onClick={() => handleWatchNow(stream.url)}
-                >
-                  <div className="relative aspect-video">
-                    <img
-                      src={stream.logo || "/placeholder.svg"}
-                      alt={stream.name}
-                      className="w-full h-full object-contain p-4 bg-black/40"
-                    />
-                    <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg">
-                      LIVE
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-medium text-white truncate">
-                      {stream.name}
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-1">{stream.group}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-center mt-4 space-x-2">
-            {livestreams.map((_, index) => (
-              <button
-                key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index === currentChannelIndex ? "bg-white" : "bg-gray-600"
-                }`}
-                onClick={() => setCurrentChannelIndex(index)}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Full-Screen Video Player Modal */}
+        {isVideoOpen && livSportsNews.length > 0 && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
+            <video
+              ref={videoRef}
+              className="w-full h-full"
+              autoPlay
+              controls
+              playsInline
+            >
+              <source src={livSportsNews[0].url} type="application/x-mpegURL" />
+              Your browser does not support the video tag.
+            </video>
 
-        {isVideoOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-1000 z-50 flex flex-col">
-            <div className="flex justify-end p-4">
-              <button
-                onClick={handleClosePlayer}
-                className="text-white bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+            {/* Loading Spinner */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <div className="loader border-4 border-t-4 border-gray-200 rounded-full w-12 h-12 animate-spin"></div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
+                <p>{error}</p>
+              </div>
+            )}
+
+            {/* Play/Pause Button */}
+            <button
+              onClick={togglePlayPause}
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white bg-gray-800 p-3 rounded-full"
+            >
+              {isPlaying ? (
+                <Pause className="w-6 h-6" />
+              ) : (
+                <Play className="w-6 h-6" />
+              )}
+            </button>
+
+            {/* Volume Control */}
+            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex items-center gap-2">
+              <Volume2 className="w-5 h-5 text-white" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={volume}
+                onChange={handleVolumeChange}
+                className="w-24"
+              />
+              <span className="text-white">{Math.round(volume * 100)}%</span>
             </div>
-            <div className="flex-1 flex items-center justify-center">
-              <video
-                ref={videoRef}
-                className="w-full h-full max-h-[80vh] object-contain"
-                controls
-                autoPlay
-                playsInline
-                muted // Add muted to ensure autoplay works
-              >
-                <source type="application/vnd.apple.mpegurl" />
-                Your browser does not support the video tag.
-              </video>
+
+            {/* Progress Bar */}
+            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-3/4 bg-gray-700 h-2 rounded-full">
+              <div
+                className="bg-purple-600 h-2 rounded-full"
+                style={{ width: `${(currentTime / duration) * 100}%` }}
+              />
             </div>
+
+            {/* Close Button */}
+            <button
+              onClick={handleClosePlayer}
+              className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
         )}
-      </div>
-
-      <div className="w-full mt-2">
-        <MainEventsSection />
       </div>
     </div>
   );
