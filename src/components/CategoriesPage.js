@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import { Tv, Newspaper, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -72,7 +70,12 @@ export default function CategoriesPage() {
   const handleWatchNow = (url) => {
     if (videoRef.current) {
       videoRef.current.src = url;
+      videoRef.current.type = "application/vnd.apple.mpegurl"; // Correct MIME type for HLS
       videoRef.current.load();
+      videoRef.current.play().catch((error) => {
+        console.error("Autoplay failed:", error);
+        // Handle autoplay failure (e.g., show a play button)
+      });
     }
     setIsVideoOpen(true);
   };
@@ -95,11 +98,9 @@ export default function CategoriesPage() {
       setCurrentChannelIndex(index);
     };
 
-    // Add event listener to handle scroll
     const container = sliderRef.current;
     container.addEventListener("scroll", handleScroll);
 
-    // Cleanup event listener on component unmount
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
@@ -108,9 +109,8 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
       <div className="max-w-[1920px] mx-auto px-1.5 md:px-6 lg:px-10">
-        <header className="  p-4">
+        <header className="p-4">
           <div className="flex items-center justify-between">
-            {/* Logo on the left */}
             <div className="flex items-center gap-4">
               <div className="flex items-center bg-gradient-to-r from-yellow-400 to-red-500 p-1 rounded-lg shadow-lg animate-blink">
                 <span className="text-white text-2xl font-extrabold">O</span>
@@ -121,8 +121,6 @@ export default function CategoriesPage() {
                 />
               </div>
             </div>
-
-            {/* User icon on the right */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
                 <User className="w-6 h-6 text-white" />
@@ -131,7 +129,6 @@ export default function CategoriesPage() {
           </div>
         </header>
 
-        {/* Categories */}
         <div className="pt-4 md:pt-6">
           <div className="flex space-x-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4">
             {categories.map((category) => {
@@ -155,7 +152,6 @@ export default function CategoriesPage() {
           </div>
         </div>
 
-        {/* Hero Section */}
         <div className="relative h-[50vh] md:h-[60vh] mt-4 b-4 rounded-xl overflow-hidden">
           <img
             src="https://i0.wp.com/www.benaventedigital.es/wp-content/uploads/2020/06/deporte-scaled.jpg?fit=2560%2C1440&ssl=1"
@@ -188,7 +184,7 @@ export default function CategoriesPage() {
           <div
             ref={sliderRef}
             className="ml-0.5 mr-0.5 flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-6 px-6 p-6"
-            style={{ scrollbarWidth: "none" }} // This removes the scrollbar line visually in Firefox
+            style={{ scrollbarWidth: "none" }}
           >
             {livestreams.map((stream, index) => (
               <div
@@ -233,7 +229,6 @@ export default function CategoriesPage() {
           </div>
         </section>
 
-        {/* Video Player Modal */}
         {isVideoOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-1000 z-50 flex flex-col">
             <div className="flex justify-end p-4">
@@ -251,8 +246,9 @@ export default function CategoriesPage() {
                 controls
                 autoPlay
                 playsInline
+                muted // Add muted to ensure autoplay works
               >
-                <source type="application/x-mpegURL" />
+                <source type="application/vnd.apple.mpegurl" />
                 Your browser does not support the video tag.
               </video>
             </div>
