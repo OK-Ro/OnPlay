@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Tv, Newspaper, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import MainEventsSection from "./MainEventsSection ";
+import Hls from "hls.js";
 
 const categories = [
   { id: 1, name: "Sports", icon: Tv },
@@ -68,14 +69,19 @@ export default function CategoriesPage() {
   ];
 
   const handleWatchNow = (url) => {
-    if (videoRef.current) {
-      videoRef.current.src = url;
-      videoRef.current.type = "application/vnd.apple.mpegurl"; // Correct MIME type for HLS
-      videoRef.current.load();
-      videoRef.current.play().catch((error) => {
-        console.error("Autoplay failed:", error);
-        // Handle autoplay failure (e.g., show a play button)
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(videoRef.current);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        videoRef.current.play();
       });
+    } else if (videoRef.current.canPlayType("application/vnd.apple.mpegurl")) {
+      // Native HLS support (e.g., Safari)
+      videoRef.current.src = url;
+      videoRef.current.play();
+    } else {
+      console.error("HLS is not supported in this browser.");
     }
     setIsVideoOpen(true);
   };
