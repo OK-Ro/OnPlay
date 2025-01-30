@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Tv, Newspaper, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
-import MainEventsSection from "./MainEventsSection ";
+import MainEventsSection from "./MainEventsSection";
 
 const categories = [
   { id: 1, name: "Sports", icon: Tv },
@@ -67,15 +67,19 @@ export default function CategoriesPage() {
     },
   ];
 
-  const handleWatchNow = () => {
-    setIsVideoOpen(true);
+  const handleWatchNow = (url) => {
+    if (videoRef.current) {
+      videoRef.current.src = url; // Set the video source
+      videoRef.current.load(); // Load the new source
+      setIsVideoOpen(true); // Open the player
+    }
   };
 
   const handleClosePlayer = () => {
-    setIsVideoOpen(false);
+    setIsVideoOpen(false); // Close the player
     if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
+      videoRef.current.pause(); // Pause the video
+      videoRef.current.currentTime = 0; // Reset the video to the beginning
     }
   };
 
@@ -220,6 +224,7 @@ export default function CategoriesPage() {
           </div>
         </section>
 
+        {/* Video Player Modal */}
         {isVideoOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-1000 z-50 flex flex-col">
             <div className="flex justify-end p-4">
@@ -234,11 +239,11 @@ export default function CategoriesPage() {
               <video
                 ref={videoRef}
                 className="w-full h-full"
-                autoPlay
+                autoPlay // Automatically play the video
                 controls // Enable default controls
                 playsInline // Ensure video plays inline on mobile devices
               >
-                <source type="application/vnd.apple.mpegurl" />
+                <source type="application/x-mpegURL" />
                 Your browser does not support the video tag.
               </video>
             </div>
