@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-
-import { X } from "lucide-react"; // Import the X icon
+import { X } from "lucide-react";
 
 const events = [
   {
@@ -57,17 +56,21 @@ const events = [
 export default function MainEventsSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
+  const [error, setError] = useState(null);
   const sliderRef = useRef(null);
   const videoRef = useRef(null);
 
   // Auto-slide functionality
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % events.length);
-    }, 5000); // Change slide every 5 seconds
-
+    let interval;
+    if (!isVideoOpen) {
+      interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % events.length);
+      }, 5000); // Change slide every 5 seconds
+    }
     return () => clearInterval(interval);
-  }, []);
+  }, [isVideoOpen]);
 
   // Scroll to the current slide
   useEffect(() => {
@@ -81,21 +84,23 @@ export default function MainEventsSection() {
     }
   }, [currentSlide]);
 
-  const handleWatchNow = () => {
+  const handleWatchNow = (url) => {
+    setSelectedVideoUrl(url);
     setIsVideoOpen(true);
   };
 
   const handleClosePlayer = () => {
-    setIsVideoOpen(false); // Close the player
+    setIsVideoOpen(false);
     if (videoRef.current) {
-      videoRef.current.pause(); // Ensure video is paused
-      videoRef.current.currentTime = 0; // Reset the video to the beginning
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
     }
   };
+
   return (
     <section className="mt-8 pb-8 md:mt-12 pl-6 p-4">
       {/* Header with "See All" Button */}
-      <div className="flex items-center justify-between px-1 ">
+      <div className="flex items-center justify-between px-1">
         <h2 className="text-xl md:text-2xl font-semibold text-white">
           All Channels
         </h2>
@@ -107,6 +112,7 @@ export default function MainEventsSection() {
         </Link>
       </div>
 
+      {/* Event Slider */}
       <div
         ref={sliderRef}
         className="mt-5 flex overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-8 px-4"
@@ -161,16 +167,17 @@ export default function MainEventsSection() {
       </div>
 
       {/* Video Player Modal */}
-      {isVideoOpen && events.length > 0 && (
+      {isVideoOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
           <video
             ref={videoRef}
             className="w-full h-full"
             autoPlay
-            controls // Enable default controls
-            playsInline // Ensure video plays inline on mobile devices
+            controls
+            playsInline
+            onError={() => setError("Failed to load video.")}
           >
-            <source src={events[0].url} type="application/x-mpegURL" />
+            <source src={selectedVideoUrl} type="application/x-mpegURL" />
             Your browser does not support the video tag.
           </video>
           {/* Close Button */}
@@ -180,6 +187,13 @@ export default function MainEventsSection() {
           >
             <X className="w-6 h-6" />
           </button>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg">
+          {error}
         </div>
       )}
     </section>
