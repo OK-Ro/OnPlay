@@ -105,10 +105,20 @@ export default function MainEventsSection() {
           All Channels
         </h2>
         <Link
-          to="/all-events"
-          className="relative inline-block px-5 py-2 text-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:brightness-125 hover:shadow-purple-500/50 before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-purple-400 before:to-pink-400 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100"
+          to="/all"
+          className="relative inline-block px-3 py-1 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:brightness-110 hover:shadow-purple-600/50 overflow-hidden group"
         >
-          See All
+          {/* Button Text */}
+          <span className="relative z-10">See All</span>
+
+          {/* Glow Effect */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+          {/* Hover Animation */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-700 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+
+          {/* Border Animation */}
+          <div className="absolute inset-0 rounded-full border-2 border-transparent group-hover:border-purple-400 transition-all duration-300"></div>
         </Link>
       </div>
 
@@ -122,7 +132,7 @@ export default function MainEventsSection() {
             key={event.id}
             className="flex-shrink-0 w-full snap-center pr-2 transform transition-transform duration-500 hover:scale-105"
           >
-            <div className="relative h-[50vh] md:h-[60vh] rounded-xl overflow-hidden group">
+            <div className="relative h-[60vh] md:h-[60vh] rounded-xl overflow-hidden group">
               {/* Background Image */}
               <img
                 src={event.image}

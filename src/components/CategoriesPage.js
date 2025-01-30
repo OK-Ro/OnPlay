@@ -67,7 +67,6 @@ export default function CategoriesPage() {
       tvgId: "SkySp.F1.HD.uk",
     },
   ];
-
   const handleWatchNow = (url) => {
     setSelectedVideoUrl(url);
     setIsVideoOpen(true);
@@ -100,8 +99,9 @@ export default function CategoriesPage() {
   }, [livestreams.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d]">
+    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
       <div className="max-w-[1920px] mx-auto px-1.5 md:px-6 lg:px-10">
+        {/* Header */}
         <header className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -122,6 +122,7 @@ export default function CategoriesPage() {
           </div>
         </header>
 
+        {/* Categories */}
         <div className="pt-4 md:pt-6">
           <div className="flex space-x-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4">
             {categories.map((category) => {
@@ -145,6 +146,7 @@ export default function CategoriesPage() {
           </div>
         </div>
 
+        {/* Featured Content */}
         <div className="relative h-[50vh] md:h-[60vh] mt-4 b-4 rounded-xl overflow-hidden">
           <img
             src="https://i0.wp.com/www.benaventedigital.es/wp-content/uploads/2020/06/deporte-scaled.jpg?fit=2560%2C1440&ssl=1"
@@ -170,6 +172,7 @@ export default function CategoriesPage() {
           </div>
         </div>
 
+        {/* Live Channels */}
         <section className="mt-8 pb-8 md:mt-12">
           <h2 className="text-xl ml-6 md:text-2xl font-semibold text-white mb-4">
             Live Channels
@@ -222,6 +225,7 @@ export default function CategoriesPage() {
           </div>
         </section>
 
+        {/* Video Player Modal */}
         {isVideoOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-1000 z-50 flex flex-col">
             <div className="flex justify-end p-4">
