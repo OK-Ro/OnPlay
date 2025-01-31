@@ -238,7 +238,13 @@ export default function CategoriesPage() {
               </button>
             </div>
             <div className="flex-1 flex items-center justify-center">
-              <video ref={videoRef} className="w-full" autoPlay playsInline>
+              <video
+                ref={videoRef}
+                className="w-full"
+                autoPlay
+                controls
+                playsInline
+              >
                 <source src={selectedVideoUrl} type="application/x-mpegURL" />
                 Your browser does not support the video tag.
               </video>
