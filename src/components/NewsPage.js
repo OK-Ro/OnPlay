@@ -71,7 +71,7 @@ export default function NewsPage() {
   const currentNews = newsData[currentNewsIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
+    <div className="min-h-auto bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
       <div className="max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-8">
         {/* Header */}
         <header className="mb-8">
@@ -113,7 +113,7 @@ export default function NewsPage() {
             to="/all-news"
             className="flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
           >
-            <span className="mr-2">View All News</span>
+            <span className="mr-1">View All News</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

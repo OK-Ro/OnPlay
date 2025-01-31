@@ -87,7 +87,7 @@ export default function AllNewsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
+    <div className="min-h-auto bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
       <div className="max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-8">
         {/* Header with Logo and Close Button */}
         <header className="p-4">

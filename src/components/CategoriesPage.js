@@ -40,11 +40,11 @@ export default function CategoriesPage() {
       tvgId: "TNT.Sports.1.HD.uk",
     },
     {
-      name: "TNT Sports 2",
-      url: "https://xyzdddd.mizhls.ru/lb/premium32/index.m3u8",
-      logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-2-uk.png?raw=true",
+      name: "Sky Sports Main Event",
+      url: "https://xyzdddd.mizhls.ru/lb/premium38/index.m3u8",
+      logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/hd/sky-sports-main-event-hd-uk.png",
       group: "SPORTS (DADDY LIVE)",
-      tvgId: "TNT.Sports.2.HD.uk",
+      tvgId: "SkySpMainEvHD.uk",
     },
     {
       name: "TNT Sports 3",
@@ -66,6 +66,13 @@ export default function CategoriesPage() {
       logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-f1-uk.png",
       group: "SPORTS (DADDY LIVE)",
       tvgId: "SkySp.F1.HD.uk",
+    },
+    {
+      name: "ESPN",
+      url: "https://xyzdddd.mizhls.ru/lb/premium44/index.m3u8",
+      logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/espn-us.png",
+      group: "SPORTS (DADDY LIVE)",
+      tvgId: "ESPN.us",
     },
   ];
   const handleWatchNow = (url) => {
@@ -100,7 +107,7 @@ export default function CategoriesPage() {
   }, [livestreams.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
+    <div className="min-h-auto bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
       <div className="max-w-[1920px] mx-auto px-1.5 md:px-6 lg:px-10">
         {/* Header */}
         <header className="p-4">
@@ -131,9 +138,15 @@ export default function CategoriesPage() {
               return (
                 <Link
                   key={category.id}
-                  to={category.name === "TV" ? "/onplayer" : "#"}
+                  to={
+                    category.name === "TV"
+                      ? "/onplayer"
+                      : category.name === "News"
+                      ? "/all-news"
+                      : "#"
+                  }
                   onClick={() => setSelectedCategory(category.name)}
-                  className={`flex-shrink-0 snap-start ml-5 inline-flex items-center gap-1 px-5 py-3 rounded-xl text-white transition-all duration-200 ${
+                  className={`flex-shrink-0 snap-start ml-2 inline-flex items-center gap-4 px-5 py-3 rounded-xl text-white transition-all duration-200 ${
                     selectedCategory === category.name
                       ? "bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/30"
                       : "bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600"
