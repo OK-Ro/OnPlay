@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
+import Hls from "hls.js"; // Import hls.js
 
 const events = [
   {
@@ -97,6 +98,37 @@ export default function MainEventsSection() {
     }
   };
 
+  // Initialize HLS.js for video playback
+  useEffect(() => {
+    if (isVideoOpen && videoRef.current) {
+      const video = videoRef.current;
+      const videoSrc = selectedVideoUrl;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play();
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            setError("Failed to load video. Please try again.");
+            hls.destroy();
+          }
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Native HLS support (e.g., iOS)
+        video.src = videoSrc;
+        video.addEventListener("loadedmetadata", () => {
+          video.play();
+        });
+      } else {
+        setError("HLS is not supported on this browser.");
+      }
+    }
+  }, [isVideoOpen, selectedVideoUrl]);
+
   return (
     <section className="mt-8 pb-8 md:mt-12 pl-6 p-4">
       {/* Header with "See All" Button */}
@@ -187,7 +219,6 @@ export default function MainEventsSection() {
             playsInline
             onError={() => setError("Failed to load video.")}
           >
-            <source src={selectedVideoUrl} type="application/x-mpegURL" />
             Your browser does not support the video tag.
           </video>
           {/* Close Button */}

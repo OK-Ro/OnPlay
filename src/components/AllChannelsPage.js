@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { X, Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import Hls from "hls.js";
 
 const ChannelList = [
   {
@@ -326,6 +327,7 @@ export default function AllChannelsPage() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState(null);
   const videoRef = useRef(null);
 
   const handleWatchNow = (url) => {
@@ -340,6 +342,37 @@ export default function AllChannelsPage() {
       videoRef.current.currentTime = 0;
     }
   };
+
+  // Initialize HLS.js for video playback
+  useEffect(() => {
+    if (isVideoOpen && videoRef.current) {
+      const video = videoRef.current;
+      const videoSrc = selectedVideoUrl;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play();
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            setError("Failed to load video. Please try again.");
+            hls.destroy();
+          }
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Native HLS support (e.g., iOS)
+        video.src = videoSrc;
+        video.addEventListener("loadedmetadata", () => {
+          video.play();
+        });
+      } else {
+        setError("HLS is not supported on this browser.");
+      }
+    }
+  }, [isVideoOpen, selectedVideoUrl]);
 
   const filteredChannels = ChannelList.filter(
     (channel) =>
@@ -388,7 +421,7 @@ export default function AllChannelsPage() {
 
         {/* All Channels Section */}
         <section className="mt-8 pb-8 md:mt-12">
-          <div className="grid grid-cols-2 sm:grid-cols-3 t-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-1">
             {filteredChannels.map((channel) => (
               <div
                 key={channel.tvgId}
@@ -434,10 +467,16 @@ export default function AllChannelsPage() {
                 controls
                 playsInline
               >
-                <source src={selectedVideoUrl} type="application/x-mpegURL" />
                 Your browser does not support the video tag.
               </video>
             </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg">
+            {error}
           </div>
         )}
       </div>
