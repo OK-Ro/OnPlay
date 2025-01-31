@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Tv, Newspaper, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
-import Hls from "hls.js";
-import MainEventsSection from "./MainEventsSection ";
+import MainEventsSection from "./MainEventsSection";
 import NewsPage from "./NewsPage";
 
 const categories = [
@@ -100,30 +99,6 @@ export default function CategoriesPage() {
       container.removeEventListener("scroll", handleScroll);
     };
   }, [livestreams.length]);
-
-  useEffect(() => {
-    if (isVideoOpen && videoRef.current) {
-      const video = videoRef.current;
-      const videoSrc = selectedVideoUrl;
-
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play();
-        });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Native HLS support (e.g., iOS)
-        video.src = videoSrc;
-        video.addEventListener("loadedmetadata", () => {
-          video.play();
-        });
-      } else {
-        console.error("HLS is not supported on this browser.");
-      }
-    }
-  }, [isVideoOpen, selectedVideoUrl]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
@@ -271,6 +246,7 @@ export default function CategoriesPage() {
                 controls
                 playsInline
               >
+                <source src={selectedVideoUrl} type="application/x-mpegURL" />
                 Your browser does not support the video tag.
               </video>
             </div>
