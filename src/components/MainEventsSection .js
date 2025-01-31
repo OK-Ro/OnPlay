@@ -181,7 +181,7 @@ export default function MainEventsSection() {
         <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
           <video
             ref={videoRef}
-            className="w-full h-full"
+            className="w-full"
             autoPlay
             controls
             playsInline

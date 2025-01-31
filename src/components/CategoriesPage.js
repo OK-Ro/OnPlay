@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Tv, Newspaper, X, User } from "lucide-react";
 import { Link } from "react-router-dom";
-import MainEventsSection from "./MainEventsSection";
+import MainEventsSection from "./MainEventsSection ";
 import NewsPage from "./NewsPage";
 
 const categories = [
@@ -68,7 +68,6 @@ export default function CategoriesPage() {
       tvgId: "SkySp.F1.HD.uk",
     },
   ];
-
   const handleWatchNow = (url) => {
     setSelectedVideoUrl(url);
     setIsVideoOpen(true);
@@ -239,13 +238,7 @@ export default function CategoriesPage() {
               </button>
             </div>
             <div className="flex-1 flex items-center justify-center">
-              <video
-                ref={videoRef}
-                className="w-full h-full"
-                autoPlay
-                controls
-                playsInline
-              >
+              <video ref={videoRef} className="w-full" autoPlay playsInline>
                 <source src={selectedVideoUrl} type="application/x-mpegURL" />
                 Your browser does not support the video tag.
               </video>
