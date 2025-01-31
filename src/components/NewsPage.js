@@ -2,37 +2,46 @@ import React, { useState, useEffect } from "react";
 import { Clock, Calendar, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// Sample news data
+// Sample sports news data
 const newsData = [
   {
     id: 1,
-    title: "Global Markets Rally as Inflation Fears Ease",
+    title: "Premier League: Manchester United vs Arsenal",
     image:
-      "https://investorplace.com/wp-content/uploads/2019/07/stock-market-rally-large.jpg",
-    source: "Financial Times",
+      "https://assets.khelnow.com/news/uploads/2024/07/250-Arsenal-vs-Man-United-copy.jpg",
+    source: "Sky Sports",
     timestamp: "2024-05-20T10:30:00Z",
     description:
-      "Global stock markets surged as investors welcomed signs that inflation pressures may be easing.",
+      "Catch the live action of this thrilling football match between Manchester United and Arsenal.",
   },
   {
     id: 2,
-    title: "Tech Giants Announce Major AI Breakthroughs",
+    title: "Formula 1: Monaco Grand Prix Highlights",
     image:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "TechCrunch",
+      "https://www.sport-tv.org/wp-content/uploads/2023/07/2307-Formule-1.jpg",
+    source: "ESPN",
     timestamp: "2024-05-19T15:45:00Z",
-    description:
-      "Leading tech companies unveiled groundbreaking advancements in artificial intelligence.",
+    description: "Watch the highlights of the iconic Monaco Grand Prix race.",
   },
   {
     id: 3,
-    title: "Climate Change Summit Yields Historic Agreement",
+    title: "NBA Finals: Lakers vs Celtics Game 7",
     image:
-      "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "BBC News",
+      "https://bloximages.chicago2.vip.townnews.com/cecildaily.com/content/tncms/assets/v3/editorial/1/fb/1fb76a2e-c416-5bde-8590-1df40d45d08c/679328db4f8ec.image.jpg?resize=750%2C500",
+    source: "NBA.com",
     timestamp: "2024-05-18T09:15:00Z",
     description:
-      "World leaders reached a landmark agreement to combat climate change at the global summit.",
+      "The ultimate basketball showdown as the Lakers take on the Celtics in Game 7 of the NBA Finals.",
+  },
+  {
+    id: 4,
+    title: "Tyson Fury vs Oleksandr Usyk: Heavyweight Championship",
+    image:
+      "https://assets.khelnow.com/news/uploads/2025/01/74-israel-adesanya-vs-nassourdine-Imavov-copy.jpg",
+    source: "Boxing News",
+    timestamp: "2024-05-17T12:00:00Z",
+    description:
+      "Witness the heavyweight championship fight between Tyson Fury and Oleksandr Usyk.",
   },
 ];
 
@@ -76,10 +85,11 @@ export default function NewsPage() {
         {/* Header */}
         <header className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Latest Breaking News
+            Latest Sports News
           </h1>
           <p className="text-gray-400">
-            Stay updated with the latest breaking news from around the world.
+            Stay updated with the latest breaking sports news from around the
+            world.
           </p>
         </header>
 
@@ -113,7 +123,7 @@ export default function NewsPage() {
             to="/all-news"
             className="flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
           >
-            <span className="mr-1">View All News</span>
+            <span className="mr-1">View All Sports News</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
