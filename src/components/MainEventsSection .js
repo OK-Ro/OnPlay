@@ -219,6 +219,7 @@ export default function MainEventsSection() {
             playsInline
             onError={() => setError("Failed to load video.")}
           >
+            <source src={selectedVideoUrl} type="application/x-mpegURL" />
             Your browser does not support the video tag.
           </video>
           {/* Close Button */}
