@@ -1,49 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Clock, Calendar, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+"use client";
 
-// Sample sports news data
-const newsData = [
-  {
-    id: 1,
-    title: "Premier League: Manchester United vs Arsenal",
-    image:
-      "https://assets.khelnow.com/news/uploads/2024/07/250-Arsenal-vs-Man-United-copy.jpg",
-    source: "Sky Sports",
-    timestamp: "2024-05-20T10:30:00Z",
-    description:
-      "Catch the live action of this thrilling football match between Manchester United and Arsenal.",
-  },
-  {
-    id: 2,
-    title: "Formula 1: Monaco Grand Prix Highlights",
-    image:
-      "https://www.sport-tv.org/wp-content/uploads/2023/07/2307-Formule-1.jpg",
-    source: "ESPN",
-    timestamp: "2024-05-19T15:45:00Z",
-    description: "Watch the highlights of the iconic Monaco Grand Prix race.",
-  },
-  {
-    id: 3,
-    title: "NBA Finals: Lakers vs Celtics Game 7",
-    image:
-      "https://bloximages.chicago2.vip.townnews.com/cecildaily.com/content/tncms/assets/v3/editorial/1/fb/1fb76a2e-c416-5bde-8590-1df40d45d08c/679328db4f8ec.image.jpg?resize=750%2C500",
-    source: "NBA.com",
-    timestamp: "2024-05-18T09:15:00Z",
-    description:
-      "The ultimate basketball showdown as the Lakers take on the Celtics in Game 7 of the NBA Finals.",
-  },
-  {
-    id: 4,
-    title: "Tyson Fury vs Oleksandr Usyk: Heavyweight Championship",
-    image:
-      "https://assets.khelnow.com/news/uploads/2025/01/74-israel-adesanya-vs-nassourdine-Imavov-copy.jpg",
-    source: "Boxing News",
-    timestamp: "2024-05-17T12:00:00Z",
-    description:
-      "Witness the heavyweight championship fight between Tyson Fury and Oleksandr Usyk.",
-  },
-];
+import React, { useState, useEffect } from "react";
+import { Clock, Calendar, Bookmark, Share2, ThumbsUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+
+const API_KEY = "49a0e9d90c634d808d9e1ba41ae2ad78"; // Replace with your NewsAPI key
+const API_URL = `https://newsapi.org/v2/everything?q=sports&apiKey=${API_KEY}`;
 
 // Helper function to format the timestamp
 const formatTimeAgo = (timestamp) => {
@@ -66,67 +29,273 @@ const formatTimeAgo = (timestamp) => {
 };
 
 export default function NewsPage() {
+  const [newsData, setNewsData] = useState([]);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
+  const [selectedNews, setSelectedNews] = useState(null);
+  const [bookmarkedNews, setBookmarkedNews] = useState([]);
 
-  // Auto-rotate news every 5 seconds
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        if (data.articles) {
+          setNewsData(
+            data.articles.map((article, index) => ({
+              id: index + 1,
+              title: article.title,
+              image: article.urlToImage || "/placeholder.svg",
+              source: article.source.name,
+              timestamp: article.publishedAt,
+              description: article.description,
+              content: article.content,
+              likes: Math.floor(Math.random() * 1000), // Random likes for demo
+              comments: Math.floor(Math.random() * 500), // Random comments for demo
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching news:", error);
+      }
+    };
+
+    fetchNews();
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % newsData.length);
-    }, 5000); // Change news every 5 seconds
+      if (!selectedNews && newsData.length > 0) {
+        setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % newsData.length);
+      }
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedNews, newsData]);
 
   const currentNews = newsData[currentNewsIndex];
 
+  const handleNewsClick = (news) => {
+    setSelectedNews(news);
+  };
+
+  const handleCloseNews = () => {
+    setSelectedNews(null);
+  };
+
+  const handleBookmark = (newsId) => {
+    setBookmarkedNews((prev) => {
+      if (prev.includes(newsId)) {
+        return prev.filter((id) => id !== newsId);
+      } else {
+        return [...prev, newsId];
+      }
+    });
+  };
+
+  const handleShare = (news) => {
+    console.log(`Sharing news: ${news.title}`);
+  };
+
+  const handleLike = (newsId) => {
+    console.log(`Liking news with ID: ${newsId}`);
+  };
+
+  if (newsData.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] text-white flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-auto bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
-      <div className="max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-8">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Latest Sports News
+    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <header className="text-center mb-16">
+          <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+            Breaking Sports News
           </h1>
-          <p className="text-gray-400">
-            Stay updated with the latest breaking sports news from around the
-            world.
+          <p className="text-xl text-gray-300">
+            Stay ahead of the game with the latest sports updates
           </p>
         </header>
 
-        {/* Latest Breaking News Section */}
-        <div className="flex flex-col md:flex-row gap-6 mb-8">
-          {/* Latest News Card */}
-          <div className="flex-1 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <img
-              src={currentNews.image}
-              alt={currentNews.title}
-              className="w-full h-64 object-cover"
-            />
-            <div className="p-6">
-              <div className="flex items-center text-gray-400 text-sm mb-2">
-                <Clock className="w-4 h-4 mr-2" />
-                <span>{formatTimeAgo(currentNews.timestamp)}</span>
+        <div className="mb-16">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentNewsIndex}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/20 transition-shadow duration-300"
+            >
+              <div className="relative">
+                <img
+                  src={currentNews.image}
+                  alt={currentNews.title}
+                  className="w-full h-96 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-8">
+                  <h2 className="text-4xl font-bold mb-4">
+                    {currentNews.title}
+                  </h2>
+                  <p className="text-xl text-gray-300 mb-4">
+                    {currentNews.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <span className="flex items-center text-gray-400">
+                        <Clock className="w-5 h-5 mr-2" />
+                        {formatTimeAgo(currentNews.timestamp)}
+                      </span>
+                      <span className="flex items-center text-gray-400">
+                        <Calendar className="w-5 h-5 mr-2" />
+                        {currentNews.source}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleNewsClick(currentNews)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full transition-colors duration-300"
+                    >
+                      Read More
+                    </button>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">
-                {currentNews.title}
-              </h2>
-              <p className="text-gray-400 mb-4">{currentNews.description}</p>
-              <div className="flex items-center text-gray-400 text-sm">
-                <Calendar className="w-4 h-4 mr-2" />
-                <span>{currentNews.source}</span>
-              </div>
-            </div>
-          </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
-          {/* Button to All News Page */}
+        <div className="text-center mb-16">
           <Link
             to="/all-news"
-            className="flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+            className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-full text-xl font-medium transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
           >
-            <span className="mr-1">View All Sports News</span>
-            <ArrowRight className="w-5 h-5" />
+            <span className="mr-2">View All Sports News</span>
           </Link>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {newsData.slice(0, 4).map((news) => (
+            <motion.div
+              key={news.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-purple-500/20 transition-all duration-300 transform hover:scale-105"
+            >
+              <img
+                src={news.image}
+                alt={news.title}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">{news.title}</h3>
+                <p className="text-gray-400 text-sm mb-4">{news.description}</p>
+                <div className="flex items-center justify-between text-gray-400 text-xs mb-4">
+                  <span>{news.source}</span>
+                  <span>{formatTimeAgo(news.timestamp)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => handleBookmark(news.id)}
+                    className={`p-2 rounded-full ${
+                      bookmarkedNews.includes(news.id)
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-700 text-gray-300"
+                    } hover:bg-purple-700 transition-colors duration-300`}
+                  >
+                    <Bookmark className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleShare(news)}
+                    className="p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-purple-700 hover:text-white transition-colors duration-300"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleLike(news.id)}
+                    className="flex items-center space-x-1 p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-purple-700 hover:text-white transition-colors duration-300"
+                  >
+                    <ThumbsUp className="w-5 h-5" />
+                    <span>{news.likes}</span>
+                  </button>
+                  <button
+                    onClick={() => handleNewsClick(news)}
+                    className="p-2 rounded-full bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-300"
+                  >
+                    Read
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {selectedNews && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <img
+                src={selectedNews.image}
+                alt={selectedNews.title}
+                className="w-full h-64 object-cover"
+              />
+              <div className="p-8">
+                <h2 className="text-3xl font-bold mb-4">
+                  {selectedNews.title}
+                </h2>
+                <div className="flex items-center justify-between text-gray-400 text-sm mb-6">
+                  <span>{selectedNews.source}</span>
+                  <span>{formatTimeAgo(selectedNews.timestamp)}</span>
+                </div>
+                <p className="text-gray-300 mb-8 text-lg leading-relaxed">
+                  {selectedNews.content}
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => handleBookmark(selectedNews.id)}
+                      className={`p-2 rounded-full ${
+                        bookmarkedNews.includes(selectedNews.id)
+                          ? "bg-purple-600 text-white"
+                          : "bg-gray-700 text-gray-300"
+                      } hover:bg-purple-700 transition-colors duration-300`}
+                    >
+                      <Bookmark className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleShare(selectedNews)}
+                      className="p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-purple-700 hover:text-white transition-colors duration-300"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleLike(selectedNews.id)}
+                      className="flex items-center space-x-1 p-2 rounded-full bg-gray-700 text-gray-300 hover:bg-purple-700 hover:text-white transition-colors duration-300"
+                    >
+                      <ThumbsUp className="w-5 h-5" />
+                      <span>{selectedNews.likes}</span>
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleCloseNews}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full transition-colors duration-300"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

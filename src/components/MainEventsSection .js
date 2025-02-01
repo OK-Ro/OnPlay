@@ -1,6 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Calendar,
+  Clock,
+  Star,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const events = [
   {
@@ -14,6 +25,9 @@ const events = [
     logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-4-uk.png?raw=true",
     group: "SPORTS (DADDY LIVE)",
     tvgId: "TNT.Sports.4.HD.uk",
+    date: "2025-05-15",
+    time: "20:00",
+    rating: 4.8,
   },
   {
     id: 2,
@@ -26,6 +40,9 @@ const events = [
     logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-f1-uk.png",
     group: "SPORTS (DADDY LIVE)",
     tvgId: "SkySp.F1.HD.uk",
+    date: "2025-05-28",
+    time: "14:00",
+    rating: 4.9,
   },
   {
     id: 3,
@@ -38,6 +55,9 @@ const events = [
     logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-3-uk.png?raw=true",
     group: "SPORTS (DADDY LIVE)",
     tvgId: "TNT.Sports.3.HD.uk",
+    date: "2025-06-10",
+    time: "22:00",
+    rating: 4.7,
   },
   {
     id: 4,
@@ -50,6 +70,9 @@ const events = [
     logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-1-uk.png?raw=true",
     group: "SPORTS (DADDY LIVE)",
     tvgId: "TNT.Sports.1.HD.uk",
+    date: "2025-06-15",
+    time: "21:00",
+    rating: 4.9,
   },
 ];
 
@@ -58,31 +81,17 @@ export default function MainEventsSection() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
   const [error, setError] = useState(null);
-  const sliderRef = useRef(null);
+
   const videoRef = useRef(null);
 
-  // Auto-slide functionality
   useEffect(() => {
-    let interval;
-    if (!isVideoOpen) {
-      interval = setInterval(() => {
+    const interval = setInterval(() => {
+      if (!isVideoOpen) {
         setCurrentSlide((prev) => (prev + 1) % events.length);
-      }, 5000); // Change slide every 5 seconds
-    }
+      }
+    }, 5000);
     return () => clearInterval(interval);
   }, [isVideoOpen]);
-
-  // Scroll to the current slide
-  useEffect(() => {
-    if (sliderRef.current) {
-      const container = sliderRef.current;
-      const slideWidth = container.offsetWidth;
-      container.scrollTo({
-        left: currentSlide * slideWidth,
-        behavior: "smooth",
-      });
-    }
-  }, [currentSlide]);
 
   const handleWatchNow = (url) => {
     setSelectedVideoUrl(url);
@@ -97,112 +106,138 @@ export default function MainEventsSection() {
     }
   };
 
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % events.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + events.length) % events.length);
+  };
+
   return (
-    <section className="mt-8 pb-8 md:mt-12 pl-6 p-4">
-      {/* Header with "See All" Button */}
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-xl md:text-2xl font-semibold text-white">
-          All Channels
+    <section className="mt-8 pb-8 md:mt-12 px-2 md:px-8 lg:px-16">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-white">
+          Main Events
         </h2>
         <Link
-          to="/all"
-          className="relative inline-block px-3 py-1 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:brightness-110 hover:shadow-purple-600/50 overflow-hidden group"
+          to="/all-events"
+          className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:brightness-110 group"
         >
-          {/* Button Text */}
           <span className="relative z-10">See All</span>
-
-          {/* Glow Effect */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-          {/* Hover Animation */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-700 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
-
-          {/* Border Animation */}
-          <div className="absolute inset-0 rounded-full border-2 border-transparent group-hover:border-purple-400 transition-all duration-300"></div>
         </Link>
       </div>
 
-      {/* Event Slider */}
-      <div
-        ref={sliderRef}
-        className="mt-5 flex overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-8 px-4"
-      >
-        {events.map((event, index) => (
-          <div
-            key={event.id}
-            className="flex-shrink-0 w-full snap-center pr-2 transform transition-transform duration-500 hover:scale-105"
+      <div className="relative">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentSlide}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative h-[70vh] md:h-[60vh] rounded-2xl overflow-hidden shadow-2xl"
           >
-            <div className="relative h-[60vh] md:h-[60vh] rounded-xl overflow-hidden group">
-              {/* Background Image */}
-              <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-110"
-              />
-
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-transparent to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0b0f19] via-transparent to-transparent" />
-
-              {/* Glassmorphism Container */}
-              <div className="absolute bottom-0 left-0 pl-6 pb-8 md:p-8 max-w-2xl backdrop-blur-sm bg-black/30 rounded-xl border border-white/10 p-6">
-                <h1 className="text-2xl md:text-5xl font-bold mb-2 md:mb-4 text-white">
-                  {event.title}
-                </h1>
-                <p className="text-sm md:text-lg text-gray-300 mb-4 md:mb-6">
-                  {event.description}
-                </p>
+            <img
+              src={events[currentSlide].image || "/placeholder.svg"}
+              alt={events[currentSlide].title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 lg:p-8 backdrop-blur-md bg-black/30">
+              <h3 className="text-xl md:text-2xl lg:text-4xl font-bold text-white mb-2">
+                {events[currentSlide].title}
+              </h3>
+              <p className="text-sm md:text-base text-gray-200 mb-4">
+                {events[currentSlide].description}
+              </p>
+              <div className="flex flex-col space-y-4">
+                <div className="grid grid-cols-2 gap-4 md:flex md:flex-wrap md:gap-6">
+                  <div className="flex items-center text-gray-300">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    <span className="text-sm md:text-base">
+                      {events[currentSlide].date}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-gray-300">
+                    <Clock className="w-5 h-5 mr-2" />
+                    <span className="text-sm md:text-base">
+                      {events[currentSlide].time}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-yellow-400">
+                    <Star className="w-5 h-5 mr-2" />
+                    <span className="text-sm md:text-base">
+                      {events[currentSlide].rating}
+                    </span>
+                  </div>
+                </div>
                 <button
-                  onClick={() => handleWatchNow(event.url)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 md:px-8 md:py-3 rounded-lg font-medium transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+                  onClick={() => handleWatchNow(events[currentSlide].url)}
+                  className="w-full md:w-auto flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-full font-medium transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
                 >
+                  <Play className="w-5 h-5 mr-2" />
                   Watch Now
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
+        </AnimatePresence>
+
+        <button
+          onClick={prevSlide}
+          className="absolute left-2 md:left-4 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full text-white hover:bg-black/70 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <button
+          onClick={nextSlide}
+          className="absolute right-2 md:right-4 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full text-white hover:bg-black/70 transition-colors"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="flex justify-center mt-4 space-x-2">
+        {events.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentSlide(index)}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentSlide ? "bg-purple-600 w-6" : "bg-gray-400"
+            }`}
+          />
         ))}
       </div>
 
-      {/* Slide Progress Bar */}
-      <div className="mt-4 px-16">
-        <div className="w-full bg-gray-700 rounded-full h-1">
-          <div
-            className="bg-gradient-to-r from-purple-600 to-pink-600 h-1 rounded-full transition-all duration-500"
-            style={{
-              width: `${((currentSlide + 1) / events.length) * 100}%`,
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Video Player Modal */}
       {isVideoOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center">
-          <video
-            ref={videoRef}
-            className="w-full"
-            autoPlay
-            controls
-            playsInline
-            onError={() => setError("Failed to load video.")}
-          >
-            <source src={selectedVideoUrl} type="application/x-mpegURL" />
-            Your browser does not support the video tag.
-          </video>
-          {/* Close Button */}
-          <button
-            onClick={handleClosePlayer}
-            className="absolute top-4 right-4 text-white bg-gray-800 p-2 rounded-full"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl">
+            <video
+              ref={videoRef}
+              className="w-full rounded-lg shadow-2xl"
+              autoPlay
+              controls
+              playsInline
+              onError={() => setError("Failed to load video.")}
+            >
+              <source src={selectedVideoUrl} type="application/x-mpegURL" />
+              Your browser does not support the video tag.
+            </video>
+            <button
+              onClick={handleClosePlayer}
+              className="absolute top-2 right-2 md:top-4 md:right-4 text-white bg-black/50 p-2 rounded-full hover:bg-black/70 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Error Message */}
       {error && (
-        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg">
+        <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg">
           {error}
         </div>
       )}
