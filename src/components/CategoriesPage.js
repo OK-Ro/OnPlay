@@ -26,6 +26,13 @@ const categories = [
 
 const livestreams = [
   {
+    name: "Sky sports Premier League",
+    url: "https://xyzdddd.mizhls.ru/lb/premium130/index.m3u8",
+    logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/sky-sports-premier-league-uk.png?raw=true",
+    group: "SPORTS (DADDY LIVE)",
+    tvgId: "SkySp.PL.uk",
+  },
+  {
     name: "TNT Sports 1",
     url: "https://xyzdddd.mizhls.ru/lb/premium31/index.m3u8",
     logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-1-uk.png?raw=true",
