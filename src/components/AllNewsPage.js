@@ -1,62 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Search, Clock, Calendar, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Footer from "./Footer";
 
-// Sample news data
-const newsData = [
-  {
-    id: 1,
-    title: "Global Markets Rally as Inflation Fears Ease",
-    image:
-      "https://images.unsplash.com/photo-1612178537253-bccd437b730e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "Financial Times",
-    timestamp: "2024-05-20T10:30:00Z",
-    description:
-      "Global stock markets surged as investors welcomed signs that inflation pressures may be easing.",
-  },
-  {
-    id: 2,
-    title: "Tech Giants Announce Major AI Breakthroughs",
-    image:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "TechCrunch",
-    timestamp: "2024-05-19T15:45:00Z",
-    description:
-      "Leading tech companies unveiled groundbreaking advancements in artificial intelligence.",
-  },
-  {
-    id: 3,
-    title: "Climate Change Summit Yields Historic Agreement",
-    image:
-      "https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "BBC News",
-    timestamp: "2024-05-18T09:15:00Z",
-    description:
-      "World leaders reached a landmark agreement to combat climate change at the global summit.",
-  },
-  {
-    id: 4,
-    title: "SpaceX Launches New Satellite Constellation",
-    image:
-      "https://images.unsplash.com/photo-1457364887197-9150188c107b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "Space.com",
-    timestamp: "2024-05-17T12:00:00Z",
-    description:
-      "SpaceX successfully launched a new batch of satellites to expand its global internet coverage.",
-  },
-  {
-    id: 5,
-    title: "New COVID Variant Detected in Several Countries",
-    image:
-      "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
-    source: "Reuters",
-    timestamp: "2024-05-16T18:20:00Z",
-    description:
-      "Health officials are monitoring a new COVID-19 variant detected in multiple regions.",
-  },
-  // Add more news articles here...
-];
+// News API key and base URL
+const API_KEY = "49a0e9d90c634d808d9e1ba41ae2ad78";
+const API_URL = "https://newsapi.org/v2/top-headlines";
 
 // Helper function to format the timestamp
 const formatTimeAgo = (timestamp) => {
@@ -79,12 +29,35 @@ const formatTimeAgo = (timestamp) => {
 };
 
 export default function AllNewsPage() {
+  const [newsData, setNewsData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch news from NewsAPI
+  const fetchNews = async () => {
+    try {
+      const response = await axios.get(API_URL, {
+        params: {
+          apiKey: API_KEY,
+          country: "us", // You can change this to a different country code if needed
+          pageSize: 10, // Adjust number of articles per request
+        },
+      });
+      setNewsData(response.data.articles);
+    } catch (error) {
+      console.error("Error fetching news:", error);
+    }
+  };
+
+  // Fetch news when component mounts
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  // Filter news based on the search query
   const filteredNews = newsData.filter(
     (news) =>
       news.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      news.source.toLowerCase().includes(searchQuery.toLowerCase())
+      news.source.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -138,20 +111,20 @@ export default function AllNewsPage() {
 
         {/* News Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredNews.map((news) => (
+          {filteredNews.map((news, index) => (
             <div
-              key={news.id}
+              key={index}
               className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
               <img
-                src={news.image}
+                src={news.urlToImage}
                 alt={news.title}
                 className="w-full h-48 object-cover"
               />
               <div className="p-6">
                 <div className="flex items-center text-gray-400 text-sm mb-2">
                   <Clock className="w-4 h-4 mr-2" />
-                  <span>{formatTimeAgo(news.timestamp)}</span>
+                  <span>{formatTimeAgo(news.publishedAt)}</span>
                 </div>
                 <h2 className="text-xl font-bold text-white mb-2">
                   {news.title}
@@ -159,7 +132,7 @@ export default function AllNewsPage() {
                 <p className="text-gray-400 mb-4">{news.description}</p>
                 <div className="flex items-center text-gray-400 text-sm">
                   <Calendar className="w-4 h-4 mr-2" />
-                  <span>{news.source}</span>
+                  <span>{news.source.name}</span>
                 </div>
               </div>
             </div>

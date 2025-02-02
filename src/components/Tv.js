@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Search, Image } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import ChannelList from "./data";
 import { motion, AnimatePresence } from "framer-motion";
@@ -110,7 +110,7 @@ export default function Tv() {
               Your browser does not support the video tag.
             </video>
             <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
-              <Image
+              <img
                 src={currentChannel.logo || "/placeholder.svg"}
                 alt={currentChannel.name}
                 width={32}
