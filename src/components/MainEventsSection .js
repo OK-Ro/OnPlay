@@ -89,7 +89,7 @@ export default function MainEventsSection() {
       if (!isVideoOpen) {
         setCurrentSlide((prev) => (prev + 1) % events.length);
       }
-    }, 5000);
+    }, 7000);
     return () => clearInterval(interval);
   }, [isVideoOpen]);
 
@@ -138,7 +138,7 @@ export default function MainEventsSection() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative h-[70vh] md:h-[60vh] rounded-2xl overflow-hidden shadow-2xl"
+            className="relative h-[65vh] md:h-[60vh] rounded-2xl overflow-hidden shadow-2xl drop-shadow-[0_-4px_1px_rgba(0,0,0,0.9)]"
           >
             <img
               src={events[currentSlide].image || "/placeholder.svg"}

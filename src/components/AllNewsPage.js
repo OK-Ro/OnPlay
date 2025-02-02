@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Search, Clock, Calendar, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import Footer from "./Footer";
 
 // Sample news data
 const newsData = [
@@ -172,6 +173,7 @@ export default function AllNewsPage() {
           </button>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

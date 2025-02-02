@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import NewsPage from "./NewsPage";
 import MainEventsSection from "./MainEventsSection ";
+import Footer from "./Footer";
 
 const categories = [
   { id: 1, name: "Sports", icon: Tv },
@@ -145,7 +146,7 @@ export default function CategoriesPage() {
                   <Link
                     to={
                       category.name === "TV"
-                        ? "/onplayer"
+                        ? "/tv"
                         : category.name === "News"
                         ? "/all-news"
                         : "#"
@@ -168,24 +169,24 @@ export default function CategoriesPage() {
 
         {/* Featured Content */}
         <section className="mb-12">
-          <div className="relative h-[60vh] rounded-3xl overflow-hidden shadow-2xl">
+          <div className="relative h-[70vh] md:h-[60vh] rounded-3xl overflow-hidden shadow-2xl drop-shadow-[0_-4px_10px_rgba(0,0,0,0.9)]">
             <img
-              src="https://i0.wp.com/www.benaventedigital.es/wp-content/uploads/2020/06/deporte-scaled.jpg?fit=2560%2C1440&ssl=1"
+              src="https://th.bing.com/th/id/R.ef37a6e2cff0d884ebdeb88105007782?rik=OpAQgZ4p7Z4jxw&riu=http%3a%2f%2fwww.baltana.com%2ffiles%2fwallpapers-2%2fSports-HD-Images-05075.jpg&ehk=mmD%2bgpSxygBfeZQA%2bQ%2ff9f39wi8Guvb%2bnb%2fb2%2fDyx6o%3d&risl=&pid=ImgRaw&r=0"
               alt="Featured content"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 p-8 w-full md:w-2/3">
-              <h2 className="text-4xl font-bold mb-4 text-white">
+            <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full md:w-2/3">
+              <h2 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-white">
                 Live Sports News
               </h2>
-              <p className="text-lg text-gray-300 mb-6">
+              <p className="text-base md:text-lg text-gray-300 mb-4 md:mb-6">
                 Stay tuned for the latest scores, highlights, and breaking news
                 from the world of sports.
               </p>
               <button
                 onClick={() => handleWatchNow(livSportsNews[0]?.url)}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 flex items-center"
+                className="px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 flex items-center"
               >
                 <Play className="w-5 h-5 mr-2" />
                 Watch Now
@@ -196,7 +197,7 @@ export default function CategoriesPage() {
 
         {/* Live Channels */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+          <h2 className="text-2xl ml-2 font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
             Live Channels
           </h2>
           <div className="relative">
@@ -208,7 +209,10 @@ export default function CategoriesPage() {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
                 {livestreams.map((stream, index) => (
-                  <div key={stream.tvgId} className="flex-shrink-0 w-full px-2">
+                  <div
+                    key={stream.tvgId}
+                    className="flex-shrink-0 w-full px-2 drop-shadow-[0_-4px_10px_rgba(0,0,0,0.9)]"
+                  >
                     <motion.div
                       className="bg-gradient-to-br from-gray-400 to-gray-900 rounded-xl overflow-hidden shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-105"
                       onClick={() => handleWatchNow(stream.url)}
@@ -238,7 +242,7 @@ export default function CategoriesPage() {
                           )}
                         </AnimatePresence>
                       </div>
-                      <div className="p-4 bg-gray-800 rounded-t-lg  drop-shadow-[0_-4px_5px_rgba(0,0,0,0.9)]">
+                      <div className="p-4 bg-gray-800 rounded-t-3xl  drop-shadow-[0_-4px_5px_rgba(0,0,0,0.9)]">
                         <h3 className="text-lg font-medium truncate text-white">
                           {stream.name}
                         </h3>
@@ -253,13 +257,13 @@ export default function CategoriesPage() {
             </div>
             <button
               onClick={prevChannel}
-              className="absolute left-0 top-1/2 z-50 transform -translate-y-1/2 bg-black bg-opacity-90 text-white p-2 rounded-full hover:bg-opacity-75 transition-all duration-200"
+              className="absolute -left-4 top-1/2 z-50 transform -translate-y-1/2 bg-black bg-opacity-90 text-white p-2 rounded-full hover:bg-opacity-75 transition-all duration-200"
             >
               <ChevronLeft size={24} />
             </button>
             <button
               onClick={nextChannel}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-90 text-white p-2 rounded-full hover:bg-opacity-75 transition-all duration-200"
+              className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-90 text-white p-2 rounded-full hover:bg-opacity-75 transition-all duration-200"
             >
               <ChevronRight size={24} />
             </button>
@@ -317,6 +321,7 @@ export default function CategoriesPage() {
           )}
         </AnimatePresence>
       </div>
+      <Footer />
     </div>
   );
 }
