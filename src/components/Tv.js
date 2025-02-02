@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Search } from "lucide-react";
+import { X, Search, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 import ChannelList from "./data";
 import { motion, AnimatePresence } from "framer-motion";
@@ -109,10 +109,14 @@ export default function Tv() {
               <source src={currentChannel.url} type="application/x-mpegURL" />
               Your browser does not support the video tag.
             </video>
-            <div className="absolute top-3 left-2 right-4 bg-black bg-opacity-50 backdrop-blur-md rounded-full px-4 py-1">
-              <h2 className="text-white text-lg font-semibold truncate">
-                {currentChannel.name}
-              </h2>
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
+              <Image
+                src={currentChannel.logo || "/placeholder.svg"}
+                alt={currentChannel.name}
+                width={32}
+                height={32}
+                className="rounded-md"
+              />
             </div>
           </div>
         </div>
