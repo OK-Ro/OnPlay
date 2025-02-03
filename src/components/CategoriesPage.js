@@ -179,7 +179,9 @@ export default function CategoriesPage() {
                         : category.name === "News"
                         ? "/all-news"
                         : category.name === "Movies"
-                        ? "/all-movies" // Link to the AllMovies page
+                        ? "/all-movies"
+                        : category.name === "Sports"
+                        ? "/"
                         : "#"
                     }
                     onClick={() => setSelectedCategory(category.name)}

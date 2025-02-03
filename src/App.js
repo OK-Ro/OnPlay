@@ -4,6 +4,7 @@ import CategoriesPage from "./components/CategoriesPage";
 import AllNewsPage from "./components/AllNewsPage";
 import AllEventsPage from "./components/AllEventsPage";
 import Tv from "./components/Tv";
+import AllMovies from "./components/AllMovies";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/tv" element={<Tv />} />
           <Route path="/all-news" element={<AllNewsPage />} />
           <Route path="/all-events" element={<AllEventsPage />} />
+          <Route path="/all-movies" element={<AllMovies />} />
         </Routes>
       </div>
     </Router>
