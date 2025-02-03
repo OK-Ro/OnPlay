@@ -5,7 +5,7 @@ import { Clock, Calendar, Bookmark, Share2, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_KEY = process.env.REACT_APP_NEWS_API_KEY;
+const API_KEY = process.env.NEWS_API_KEY;
 const API_URL = `https://newsapi.org/v2/top-headlines?country=us&category=sports&apiKey=${API_KEY}`;
 
 const formatTimeAgo = (timestamp) => {
