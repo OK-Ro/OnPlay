@@ -4,9 +4,11 @@ import { Search, Clock, Calendar, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Footer from "./Footer";
 
-// News API key and base URL
-const API_KEY = "49a0e9d90c634d808d9e1ba41ae2ad78";
-const API_URL = "https://newsapi.org/v2/top-headlines";
+const API_KEY = process.env.REACT_APP_NEWS_API_KEY;
+const API_URL = process.env.REACT_APP_NEWS_API_URL;
+
+console.log("API Key:", API_KEY); // Debugging to check if it prints correctly
+console.log("API URL:", API_URL);
 
 // Helper function to format the timestamp
 const formatTimeAgo = (timestamp) => {

@@ -5,7 +5,7 @@ import { Clock, Calendar, Bookmark, Share2, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_KEY = "49a0e9d90c634d808d9e1ba41ae2ad78"; // Replace with your NewsAPI key
+const API_KEY = process.env.REACT_APP_NEWS_API_KEY;
 const API_URL = `https://newsapi.org/v2/top-headlines?country=us&category=sports&apiKey=${API_KEY}`;
 
 const formatTimeAgo = (timestamp) => {
@@ -30,7 +30,7 @@ export default function NewsPage() {
       try {
         const response = await fetch(API_URL);
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
         if (data.articles) {
