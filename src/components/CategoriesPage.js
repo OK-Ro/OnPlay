@@ -90,7 +90,7 @@ export default function CategoriesPage() {
     setLivSportsNews([
       {
         name: "Sky Sports News",
-        url: "https://xyzdddd.mizhls.ru/lb/premium366/index.m3u8",
+        url: "http://149.202.215.151:8080/live/home/home/44102.ts",
         logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-news-uk.png",
         group: "SPORTS (DADDY LIVE)",
         tvgId: "SkySp.News.HD.uk",
