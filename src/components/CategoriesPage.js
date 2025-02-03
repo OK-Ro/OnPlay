@@ -85,17 +85,31 @@ export default function CategoriesPage() {
   const [hoveredChannel, setHoveredChannel] = useState(null);
   const videoRef = useRef(null);
   const sliderRef = useRef(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isWindows, setIsWindows] = useState(false);
+  const [isSmartTV, setIsSmartTV] = useState(false);
 
   useEffect(() => {
     setLivSportsNews([
       {
         name: "Sky Sports News",
-        url: "http://149.202.215.151:8080/live/home/home/44102.ts",
+        url: "https://xyzdddd.mizhls.ru/lb/premium366/index.m3u8",
         logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-news-uk.png",
         group: "SPORTS (DADDY LIVE)",
         tvgId: "SkySp.News.HD.uk",
       },
     ]);
+  }, []);
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+    setIsWindows(/win/.test(userAgent));
+    setIsSmartTV(
+      /smart-tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast.tv/.test(
+        userAgent
+      )
+    );
   }, []);
 
   const handleWatchNow = (url) => {
@@ -313,10 +327,35 @@ export default function CategoriesPage() {
                   autoPlay
                   controls
                   playsInline
+                  {...(isIOS
+                    ? {}
+                    : isWindows
+                    ? {
+                        controlsList: "nodownload",
+                        disablePictureInPicture: true,
+                      }
+                    : isSmartTV
+                    ? {
+                        controlsList: "nodownload",
+                      }
+                    : {
+                        controlsList: "nodownload",
+                        disablePictureInPicture: true,
+                        disableRemotePlayback: true,
+                      })}
                 >
                   <source src={selectedVideoUrl} type="application/x-mpegURL" />
-                  Your browser does not support the video tag.
+                  Your browser or device does not support the video tag.
                 </video>
+                {!isIOS && (
+                  <p className="mt-4 text-white text-center">
+                    {isWindows
+                      ? "If you're having trouble playing the video, try using a different browser or updating your current one."
+                      : isSmartTV
+                      ? "If the video doesn't play, try updating your smart TV's software or using a different streaming device."
+                      : "If you're having trouble playing the video, please try using a different browser, device, or updating your software."}
+                  </p>
+                )}
                 <button
                   onClick={handleClosePlayer}
                   className="absolute -top-12 right-0 text-white bg-red-600 p-2 rounded-full hover:bg-red-700 transition-colors duration-200"
