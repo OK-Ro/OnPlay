@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import NewsPage from "./NewsPage";
 import MainEventsSection from "./MainEventsSection ";
 import Footer from "./Footer";
+import MoviesSection from "./MoviesSection";
 
 const categories = [
   { id: 1, name: "Sports", icon: Tv },
@@ -88,6 +89,7 @@ export default function CategoriesPage() {
   const [isIOS, setIsIOS] = useState(false);
   const [isWindows, setIsWindows] = useState(false);
   const [isSmartTV, setIsSmartTV] = useState(false);
+  const [isPC, setIsPC] = useState(false); // Added state for PC detection
 
   useEffect(() => {
     setLivSportsNews([
@@ -110,6 +112,10 @@ export default function CategoriesPage() {
         userAgent
       )
     );
+    setIsPC(
+      /windows nt|linux|macintosh/.test(userAgent) &&
+        !/mobile|android/.test(userAgent)
+    ); // Updated device detection
   }, []);
 
   const handleWatchNow = (url) => {
@@ -307,6 +313,7 @@ export default function CategoriesPage() {
 
         {/* Main Events Section */}
         <MainEventsSection />
+        <MoviesSection />
 
         {/* News Page */}
         <NewsPage />
@@ -329,7 +336,7 @@ export default function CategoriesPage() {
                   playsInline
                   {...(isIOS
                     ? {}
-                    : isWindows
+                    : isWindows || isPC // Updated condition for Windows or PC
                     ? {
                         controlsList: "nodownload",
                         disablePictureInPicture: true,
@@ -349,8 +356,8 @@ export default function CategoriesPage() {
                 </video>
                 {!isIOS && (
                   <p className="mt-4 text-white text-center">
-                    {isWindows
-                      ? "If you're having trouble playing the video, try using a different browser or updating your current one."
+                    {isWindows || isPC // Updated condition for Windows or PC
+                      ? "If you're having trouble playing the video, try using a different browser, updating your current one, or check your system's video codecs."
                       : isSmartTV
                       ? "If the video doesn't play, try updating your smart TV's software or using a different streaming device."
                       : "If you're having trouble playing the video, please try using a different browser, device, or updating your software."}
