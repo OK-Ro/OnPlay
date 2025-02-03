@@ -61,23 +61,25 @@ export default function AllNewsPage() {
 
   return (
     <div className="min-h-auto bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] hide-scrollbar">
-      <div className="max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-8">
+      <div className="max-w-[1920px] mx-auto px-3 md:px-8 lg:px-12 py-6">
         {/* Header with Logo and Close Button */}
         <header className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center bg-gradient-to-r from-yellow-400 to-red-500 p-1 rounded-lg shadow-lg animate-blink">
-                <span className="text-white text-2xl font-extrabold">O</span>
+            <div className="flex items-center space-x-0.5">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg shadow-lg">
                 <img
                   src="https://i.pinimg.com/originals/37/97/d9/3797d93321ab72678a94ff686da5c773.png"
                   alt="Logo Icon"
-                  className="w-6 h-6 ml-2"
+                  className="w-6 h-6 inline-block ml-1"
                 />
               </div>
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                nPlay
+              </h1>
             </div>
             <Link
-              to="/" // Navigate back to the homepage
-              className="text-white bg-gray-800 p-2 rounded-full hover:bg-gray-700 transition-colors"
+              to="/"
+              className="text-white bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full hover:from-purple-600 hover:to-pink-600 transition-all duration-300 inline-block"
             >
               <X className="w-6 h-6" />
             </Link>
@@ -86,12 +88,9 @@ export default function AllNewsPage() {
 
         {/* Page Title and Description */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            All News
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white bg-red-600 px-4 py-2 uppercase tracking-wide shadow-lg ml-2 mb-4 border-l-8 border-white">
+            News
           </h1>
-          <p className="text-gray-400">
-            Explore all the latest news from around the world.
-          </p>
         </div>
 
         {/* Search Bar */}

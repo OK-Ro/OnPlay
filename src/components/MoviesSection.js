@@ -6,17 +6,6 @@ import { Film, Play, X } from "lucide-react";
 
 const movies = [
   {
-    id: 1,
-    title: "Inception",
-    image:
-      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-    rating: 8.8,
-    year: 2010,
-    description:
-      "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
-    videoUrl: "https://www.example.com/videos/inception.mp4",
-  },
-  {
     id: 2,
     title: "The Dark Knight",
     image:
@@ -246,7 +235,7 @@ function MovieGrid({ title, movies, onWatchNow }) {
       <h2 className="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
         {title}
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {movies.map((movie) => (
           <motion.div
             key={movie.id}

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Tv,
   Newspaper,
-  Film,
   Play,
   User,
   ChevronRight,
@@ -17,7 +16,6 @@ const categories = [
   { id: 1, name: "Sports", icon: Tv },
   { id: 2, name: "News", icon: Newspaper },
   { id: 3, name: "TV", icon: Tv },
-  { id: 4, name: "Movies", icon: Film },
 ];
 
 const featuredMovie = {
@@ -203,8 +201,8 @@ export default function AllMovies() {
                         ? "/tv"
                         : category.name === "News"
                         ? "/all-news"
-                        : category.name === "Movies"
-                        ? "/all-movies"
+                        : category.name === "Sports"
+                        ? "/"
                         : "#"
                     }
                     onClick={() => setSelectedCategory(category.name)}
