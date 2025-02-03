@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   Play,
   Eye,
+  Film,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +24,7 @@ const categories = [
   { id: 1, name: "Sports", icon: Tv },
   { id: 2, name: "News", icon: Newspaper },
   { id: 3, name: "TV", icon: Tv },
+  { id: 4, name: "Movies", icon: Film },
 ];
 
 const livestreams = [
@@ -143,7 +145,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Header */}
         <header className="py-6 flex items-center justify-between">
           <div className="flex items-center space-x-0.5">
@@ -165,7 +167,7 @@ export default function CategoriesPage() {
 
         {/* Categories */}
         <nav className="mb-8">
-          <ul className="flex space-x-6 overflow-x-auto scrollbar-hide justify-center items-center">
+          <ul className="flex space-x-2 overflow-x-auto scrollbar-hide justify-center items-center">
             {categories.map((category) => {
               const Icon = category.icon;
               return (
@@ -176,16 +178,18 @@ export default function CategoriesPage() {
                         ? "/tv"
                         : category.name === "News"
                         ? "/all-news"
+                        : category.name === "Movies"
+                        ? "/all-movies" // Link to the AllMovies page
                         : "#"
                     }
                     onClick={() => setSelectedCategory(category.name)}
-                    className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 ${
+                    className={`flex items-center px-3 py-2 rounded-full transition-all duration-300 ${
                       selectedCategory === category.name
                         ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                         : "bg-gray-800 text-gray-300 hover:bg-gray-700"
                     }`}
                   >
-                    <Icon className="w-5 h-5 mr-2" />
+                    <Icon className="w-4 h-4 mr-2" />
                     <span>{category.name}</span>
                   </Link>
                 </li>
@@ -284,7 +288,7 @@ export default function CategoriesPage() {
             </div>
             <button
               onClick={prevChannel}
-              className="absolute -left-4 top-1/2 z-50 transform -translate-y-1/2 bg-black bg-opacity-90 text-white p-2 rounded-full hover:bg-opacity-75 transition-all duration-200"
+              className="absolute -left-3 top-1/2 z-50 transform -translate-y-1/2 bg-black bg-opacity-90 text-white p-2 rounded-full hover:bg-opacity-75 transition-all duration-200"
             >
               <ChevronLeft size={24} />
             </button>

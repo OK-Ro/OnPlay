@@ -7,9 +7,6 @@ import Footer from "./Footer";
 const API_KEY = process.env.REACT_APP_NEWS_API_KEY;
 const API_URL = process.env.REACT_APP_NEWS_API_URL;
 
-console.log("API Key:", API_KEY); // Debugging to check if it prints correctly
-console.log("API URL:", API_URL);
-
 // Helper function to format the timestamp
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
