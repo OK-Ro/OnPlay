@@ -14,24 +14,25 @@ import { motion, AnimatePresence } from "framer-motion";
 const events = [
   {
     id: 1,
-    title: "Premier League: Manchester United vs Arsenal",
+    title: "EFL: Newcastle United vs Arsenal",
     image:
-      "https://assets.khelnow.com/news/uploads/2024/07/250-Arsenal-vs-Man-United-copy.jpg",
-    description: "Catch the live action of this thrilling football match.",
-    name: "TNT Sports 4",
-    url: "https://xyzdddd.mizhls.ru/lb/premium34/index.m3u8",
-    logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-4-uk.png?raw=true",
+      "https://img-cdn.thepublive.com/fit-in/1200x675/sky247-nigeria/media/media_files/2025/02/04/kQW5kSoVk8NJFrSEAl64.jpg",
+    description:
+      "Arsenal looks to overturn a 2-0 deficit against Newcastle in the second leg of the Carabao Cup semi-final.",
+    name: "Sky Sports Football",
+    url: "https://xyzdddd.mizhls.ru/lb/premium50/index.m3u8",
+    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/sky-sports-football-uk.png",
     group: "SPORTS (DADDY LIVE)",
-    tvgId: "TNT.Sports.4.HD.uk",
-    date: "2025-05-15",
+    tvgId: "SkySp.Football.HD.uk",
+    date: "2025-02-05",
     time: "20:00",
-    rating: 4.8,
+    rating: 4.9,
   },
   {
     id: 2,
     title: "Formula 1: Monaco Grand Prix",
     image:
-      "https://www.sport-tv.org/wp-content/uploads/2023/07/2307-Formule-1.jpg",
+      "https://lustermagazine.com/wp-content/uploads/2024/05/imagen_2024-05-26_123527229-1024x683.jpg",
     description: "Watch the fastest drivers compete in the iconic Monaco race.",
     name: "Sky Sports F1",
     url: "https://xyzdddd.mizhls.ru/lb/premium60/index.m3u8",
@@ -46,7 +47,7 @@ const events = [
     id: 3,
     title: "Boxing: Tyson Fury vs Oleksandr Usyk",
     image:
-      "https://assets.khelnow.com/news/uploads/2025/01/74-israel-adesanya-vs-nassourdine-Imavov-copy.jpg",
+      "https://image.discovery.indazn.com/ca/v2/ca/image?id=4wicfatodp01zwdt91lckygse_image-header_pDach_1709744365000",
     description: "Witness the heavyweight championship fight live.",
     name: "TNT Sports 3",
     url: "https://xyzdddd.mizhls.ru/lb/premium33/index.m3u8",
@@ -57,19 +58,21 @@ const events = [
     time: "22:00",
     rating: 4.7,
   },
+
   {
     id: 4,
-    title: "NBA Finals: Lakers vs Celtics",
+    title: "UEFA: Bayern Munich vs Manchester City",
     image:
-      "https://bloximages.chicago2.vip.townnews.com/cecildaily.com/content/tncms/assets/v3/editorial/1/fb/1fb76a2e-c416-5bde-8590-1df40d45d08c/679328db4f8ec.image.jpg?resize=750%2C500",
-    description: "The ultimate basketball showdown.",
-    name: "TNT Sports 1",
-    url: "https://xyzdddd.mizhls.ru/lb/premium31/index.m3u8",
-    logo: "https://github.com/tv-logo/tv-logos/blob/main/countries/united-kingdom/tnt-sports-1-uk.png?raw=true",
-    group: "SPORTS (DADDY LIVE)",
-    tvgId: "TNT.Sports.1.HD.uk",
-    date: "2025-06-15",
-    time: "21:00",
+      "https://www.mancity.com/meta/media/hi4foa4w/16x9-qf_bayern_munich.jpg?width=1620",
+    description:
+      "A high-stakes showdown between two of Europe's elite football clubs: Bayern Munich and Manchester City in the Champions League knockout round.",
+    name: "UEFA Champions League",
+    url: "https://www.uefa.com/uefachampionsleague/season=2025/matches/",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/UEFA_Champions_League_logo_2015.svg/600px-UEFA_Champions_League_logo_2015.svg.png",
+    group: "SPORTS (EUROPEAN COMPETITIONS)",
+    tvgId: "UEFA.Champions.League.HD",
+    date: "2025-02-13",
+    time: "20:00",
     rating: 4.9,
   },
 ];

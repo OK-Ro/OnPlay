@@ -251,7 +251,7 @@ export default function CategoriesPage() {
         <section className="mb-12">
           <div className="relative h-[70vh] md:h-[60vh] rounded-3xl overflow-hidden shadow-2xl drop-shadow-[0_-4px_10px_rgba(0,0,0,0.9)]">
             <img
-              src="https://th.bing.com/th/id/R.ef37a6e2cff0d884ebdeb88105007782?rik=OpAQgZ4p7Z4jxw&riu=http%3a%2f%2fwww.baltana.com%2ffiles%2fwallpapers-2%2fSports-HD-Images-05075.jpg&ehk=mmD%2bgpSxygBfeZQA%2bQ%2ff9f39wi8Guvb%2bnb%2fb2%2fDyx6o%3d&risl=&pid=ImgRaw&r=0"
+              src="https://media.giphy.com/media/3o6Ztqh4JSlVqi2Z20/giphy.gif"
               alt="Featured content"
               className="w-full h-full object-cover"
             />
