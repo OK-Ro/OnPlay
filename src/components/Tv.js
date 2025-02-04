@@ -95,11 +95,11 @@ export default function Tv() {
 
         {/* Video Player */}
         <div className="relative mb-12">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl transform rotate-1 scale-105 blur-lg opacity-50"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl transform rotate-1 scale-105 blur-lg opacity-80"></div>
           <div className="relative bg-gray-800 rounded-2xl overflow-hidden shadow-3xl">
             <video
               ref={videoRef}
-              className="w-full aspect-video object-cover drop-shadow-[0_-1px_1px_rgba(0,0,0,0.9)]"
+              className="w-full aspect-video object-cover "
               controls
               autoPlay
               playsInline
@@ -107,7 +107,7 @@ export default function Tv() {
               <source src={currentChannel.url} type="application/x-mpegURL" />
               Your browser does not support the video tag.
             </video>
-            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm p-2 rounded-lg flex items-center space-x-2">
+            <div className="absolute top-1 left-1 p-2 rounded-lg flex items-center space-x-2">
               <img
                 src={currentChannel.logo || "/placeholder.svg"}
                 alt={currentChannel.name}
