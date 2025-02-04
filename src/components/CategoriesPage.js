@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Tv,
   Newspaper,
@@ -16,9 +14,10 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 import NewsPage from "./NewsPage";
-import MainEventsSection from "./MainEventsSection ";
+
 import Footer from "./Footer";
 import MoviesSection from "./MoviesSection";
+import MainEventsSection from "./MainEventsSection ";
 
 const categories = [
   { id: 1, name: "Sports", icon: Tv },
@@ -107,13 +106,22 @@ export default function CategoriesPage() {
     ]);
   }, []);
 
+  const loadHls = useCallback(() => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+    script.async = true;
+    document.body.appendChild(script);
+    script.onload = () => setUseHls(true);
+  }, []);
+
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
+
     setIsIOS(/iphone|ipad|ipod/.test(userAgent));
     setIsAndroid(/android/.test(userAgent));
     setIsWindows(/win/.test(userAgent));
     setIsSmartTV(
-      /smart-tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast.tv/.test(
+      /smart-tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast.tv|webos/.test(
         userAgent
       )
     );
@@ -122,40 +130,35 @@ export default function CategoriesPage() {
         !/mobile|android/.test(userAgent)
     );
 
-    // Load HLS.js if not on iOS (which supports HLS natively)
     if (!/iphone|ipad|ipod/.test(userAgent)) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
-      script.async = true;
-      document.body.appendChild(script);
-      script.onload = () => setUseHls(true);
+      loadHls();
     }
-  }, []);
+  }, [loadHls]);
 
-  const handleWatchNow = (url) => {
+  const handleWatchNow = useCallback((url) => {
     setSelectedVideoUrl(url);
     setIsVideoOpen(true);
-  };
+  }, []);
 
-  const handleClosePlayer = () => {
+  const handleClosePlayer = useCallback(() => {
     setIsVideoOpen(false);
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
     }
-  };
+  }, []);
 
-  const nextChannel = () => {
+  const nextChannel = useCallback(() => {
     setCurrentChannelIndex((prevIndex) => (prevIndex + 1) % livestreams.length);
-  };
+  }, []);
 
-  const prevChannel = () => {
+  const prevChannel = useCallback(() => {
     setCurrentChannelIndex(
       (prevIndex) => (prevIndex - 1 + livestreams.length) % livestreams.length
     );
-  };
+  }, []);
 
-  const CustomVideoPlayer = ({ src }) => {
+  const CustomVideoPlayer = React.memo(({ src }) => {
     const videoRef = useRef(null);
 
     useEffect(() => {
@@ -185,7 +188,7 @@ export default function CategoriesPage() {
         </video>
       </div>
     );
-  };
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">

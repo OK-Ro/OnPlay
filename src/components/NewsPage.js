@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import { Clock, Calendar, Bookmark, Share2, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";

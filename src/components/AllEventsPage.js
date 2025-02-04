@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Play, Calendar, Clock, Star, ArrowLeft } from "lucide-react";
