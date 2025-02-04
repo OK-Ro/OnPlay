@@ -89,9 +89,11 @@ export default function CategoriesPage() {
   const videoRef = useRef(null);
   const sliderRef = useRef(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isWindows, setIsWindows] = useState(false);
   const [isSmartTV, setIsSmartTV] = useState(false);
-  const [isPC, setIsPC] = useState(false); // Added state for PC detection
+  const [isPC, setIsPC] = useState(false);
+  const [useHls, setUseHls] = useState(false);
 
   useEffect(() => {
     setLivSportsNews([
@@ -108,6 +110,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
     setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+    setIsAndroid(/android/.test(userAgent));
     setIsWindows(/win/.test(userAgent));
     setIsSmartTV(
       /smart-tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast.tv/.test(
@@ -117,7 +120,16 @@ export default function CategoriesPage() {
     setIsPC(
       /windows nt|linux|macintosh/.test(userAgent) &&
         !/mobile|android/.test(userAgent)
-    ); // Updated device detection
+    );
+
+    // Load HLS.js if not on iOS (which supports HLS natively)
+    if (!/iphone|ipad|ipod/.test(userAgent)) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+      script.async = true;
+      document.body.appendChild(script);
+      script.onload = () => setUseHls(true);
+    }
   }, []);
 
   const handleWatchNow = (url) => {
@@ -140,6 +152,38 @@ export default function CategoriesPage() {
   const prevChannel = () => {
     setCurrentChannelIndex(
       (prevIndex) => (prevIndex - 1 + livestreams.length) % livestreams.length
+    );
+  };
+
+  const CustomVideoPlayer = ({ src }) => {
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+      if (videoRef.current) {
+        if (useHls && window.Hls && window.Hls.isSupported()) {
+          const hls = new window.Hls();
+          hls.loadSource(src);
+          hls.attachMedia(videoRef.current);
+        } else if (
+          videoRef.current.canPlayType("application/vnd.apple.mpegurl")
+        ) {
+          videoRef.current.src = src;
+        }
+      }
+    }, [src]);
+
+    return (
+      <div className="relative w-full h-0 pb-[56.25%]">
+        <video
+          ref={videoRef}
+          className="absolute top-0 left-0 w-full h-full rounded-lg shadow-2xl"
+          controls
+          playsInline
+          autoPlay
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
     );
   };
 
@@ -334,41 +378,20 @@ export default function CategoriesPage() {
               className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
             >
               <div className="relative w-full max-w-4xl">
-                <video
-                  ref={videoRef}
-                  className="w-full rounded-lg shadow-2xl"
-                  autoPlay
-                  controls
-                  playsInline
-                  {...(isIOS
-                    ? {}
-                    : isWindows || isPC // Updated condition for Windows or PC
-                    ? {
-                        controlsList: "nodownload",
-                        disablePictureInPicture: true,
-                      }
-                    : isSmartTV
-                    ? {
-                        controlsList: "nodownload",
-                      }
-                    : {
-                        controlsList: "nodownload",
-                        disablePictureInPicture: true,
-                        disableRemotePlayback: true,
-                      })}
-                >
-                  <source src={selectedVideoUrl} type="application/x-mpegURL" />
-                  Your browser or device does not support the video tag.
-                </video>
-                {!isIOS && (
-                  <p className="mt-4 text-white text-center">
-                    {isWindows || isPC // Updated condition for Windows or PC
-                      ? "If you're having trouble playing the video, try using a different browser, updating your current one, or check your system's video codecs."
+                <CustomVideoPlayer src={selectedVideoUrl} />
+                <div className="mt-4 flex justify-between items-center">
+                  <p className="text-white text-center text-sm">
+                    {isIOS
+                      ? "Video playback is optimized for iOS devices."
+                      : isAndroid
+                      ? "Video playback is optimized for Android devices."
+                      : isWindows || isPC
+                      ? "If you're having trouble, try a different browser or update your current one."
                       : isSmartTV
-                      ? "If the video doesn't play, try updating your smart TV's software or using a different streaming device."
-                      : "If you're having trouble playing the video, please try using a different browser, device, or updating your software."}
+                      ? "If the video doesn't play, try updating your smart TV's software."
+                      : "If you're having issues, try a different browser or update your software."}
                   </p>
-                )}
+                </div>
                 <button
                   onClick={handleClosePlayer}
                   className="absolute -top-12 right-0 text-white bg-red-600 p-2 rounded-full hover:bg-red-700 transition-colors duration-200"
