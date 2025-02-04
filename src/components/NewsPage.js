@@ -3,9 +3,11 @@ import { Clock, Calendar, Bookmark, Share2, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Ensure your environment variable is set in Netlify
 const API_KEY = process.env.REACT_APP_NEWS_API_KEY;
 const API_URL = `https://newsapi.org/v2/top-headlines?country=us&category=sports&apiKey=${API_KEY}`;
 
+// Helper function to format timestamps
 const formatTimeAgo = (timestamp) => {
   const now = new Date();
   const publishedDate = new Date(timestamp);
@@ -22,7 +24,10 @@ export default function NewsPage() {
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
   const [selectedNews, setSelectedNews] = useState(null);
   const [bookmarkedNews, setBookmarkedNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch news data from the API
   useEffect(() => {
     const fetchNews = async () => {
       try {
@@ -48,12 +53,16 @@ export default function NewsPage() {
         }
       } catch (error) {
         console.error("Error fetching news:", error);
+        setError("Failed to fetch news. Please try again later.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchNews();
   }, []);
 
+  // Automatically cycle through news articles
   useEffect(() => {
     const interval = setInterval(() => {
       if (!selectedNews && newsData.length > 0) {
@@ -66,6 +75,7 @@ export default function NewsPage() {
 
   const currentNews = newsData[currentNewsIndex];
 
+  // Event handlers
   const handleNewsClick = (news) => setSelectedNews(news);
   const handleCloseNews = () => setSelectedNews(null);
   const handleBookmark = (newsId) => {
@@ -78,7 +88,8 @@ export default function NewsPage() {
   const handleShare = (news) => console.log(`Sharing news: ${news.title}`);
   const handleLike = (newsId) => console.log(`Liking news with ID: ${newsId}`);
 
-  if (newsData.length === 0) {
+  // Loading state
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] text-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
@@ -86,6 +97,21 @@ export default function NewsPage() {
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">
+            Oops! Something went wrong.
+          </h2>
+          <p className="text-gray-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Main render
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -98,6 +124,7 @@ export default function NewsPage() {
           </p>
         </header>
 
+        {/* Featured News Section */}
         <div className="mb-8 sm:mb-16 relative">
           <AnimatePresence mode="wait">
             <motion.div
@@ -106,13 +133,13 @@ export default function NewsPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
               transition={{ duration: 0.5 }}
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/20 transition-shadow duration-300 "
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl hover:shadow-purple-500/20 transition-shadow duration-300"
             >
               <div className="relative">
                 <img
                   src={currentNews.image || "/placeholder.svg"}
                   alt={currentNews.title}
-                  className="w-full h-[60vh]  sm:h-64 md:h-96 object-cover shadow-2xl drop-shadow-[0_-4px_1px_rgba(0,0,0,0.9)]" // Adjusted height for mobile
+                  className="w-full h-[60vh] sm:h-64 md:h-96 object-cover shadow-2xl drop-shadow-[0_-4px_1px_rgba(0,0,0,0.9)]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
@@ -125,19 +152,17 @@ export default function NewsPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center space-x-4 mb-2 sm:mb-0">
                       <span className="flex items-center text-gray-400 text-xs sm:text-sm">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
-                        {/* Adjusted icon size for mobile */}
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         {formatTimeAgo(currentNews.timestamp)}
                       </span>
                       <span className="flex items-center text-gray-400 text-xs sm:text-sm">
-                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />{" "}
-                        {/* Adjusted icon size for mobile */}
+                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         {currentNews.source}
                       </span>
                     </div>
                     <button
                       onClick={() => handleNewsClick(currentNews)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors duration-300 text-xs sm:text-sm md:text-base" // Adjusted button text size for mobile
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full transition-colors duration-300 text-xs sm:text-sm md:text-base"
                     >
                       Read More
                     </button>
@@ -148,6 +173,7 @@ export default function NewsPage() {
           </AnimatePresence>
         </div>
 
+        {/* View All News Button */}
         <div className="text-center mb-8 sm:mb-16">
           <Link
             to="/all-news"
@@ -157,6 +183,7 @@ export default function NewsPage() {
           </Link>
         </div>
 
+        {/* News Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 shadow-5xl drop-shadow-[0_-4px_10px_rgba(0,0,0,0.9)]">
           {newsData.slice(0, 6).map((news) => (
             <motion.div
@@ -218,6 +245,7 @@ export default function NewsPage() {
           ))}
         </div>
 
+        {/* News Detail Modal */}
         <AnimatePresence>
           {selectedNews && (
             <motion.div
