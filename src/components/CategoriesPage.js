@@ -378,7 +378,7 @@ export default function CategoriesPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+              className="fixed inset-0 bg-black bg-opacity-100 z-50 flex items-center justify-center"
             >
               <div className="relative w-full max-w-4xl">
                 <CustomVideoPlayer src={selectedVideoUrl} />
@@ -397,9 +397,9 @@ export default function CategoriesPage() {
                 </div>
                 <button
                   onClick={handleClosePlayer}
-                  className="absolute -top-12 right-0 text-white bg-red-600 p-2 rounded-full hover:bg-red-700 transition-colors duration-200"
+                  className="absolute -top-12 right-0 text-white bg-pink-900 p-2 rounded-full hover:bg-red-900 transition-colors duration-200"
                 >
-                  <X size={24} />
+                  <X size={15} />
                 </button>
               </div>
             </motion.div>

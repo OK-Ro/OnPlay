@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react"; // Added useCallback
+import React, { useState, useRef, useEffect } from "react";
 import { X, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import ChannelList from "./data";
@@ -11,13 +11,12 @@ export default function Tv() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentChannel, setCurrentChannel] = useState(ChannelList[0]);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false); // Track scroll state
   const videoRef = useRef(null);
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.src = currentChannel.url;
-      videoRef.current.load();
       videoRef.current
         .play()
         .catch((error) => console.log("Autoplay prevented:", error));
@@ -41,39 +40,6 @@ export default function Tv() {
   const handleChannelClick = (channel) => {
     setCurrentChannel(channel);
   };
-
-  // Wrap reloadVideo in useCallback to prevent unnecessary recreations
-  const reloadVideo = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
-      videoRef.current
-        .play()
-        .catch((error) => console.log("Autoplay prevented:", error));
-    }
-  }, []); // No dependencies, so it won't change between renders
-
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      const handleError = () => {
-        console.log("Video playback error, attempting to reload...");
-        reloadVideo();
-      };
-
-      const handleStalled = () => {
-        console.log("Video playback stalled, attempting to reload...");
-        reloadVideo();
-      };
-
-      videoElement.addEventListener("error", handleError);
-      videoElement.addEventListener("stalled", handleStalled);
-
-      return () => {
-        videoElement.removeEventListener("error", handleError);
-        videoElement.removeEventListener("stalled", handleStalled);
-      };
-    }
-  }, [currentChannel, reloadVideo]); // Now reloadVideo is stable
 
   const filteredChannels = ChannelList.filter(
     (channel) =>
@@ -131,13 +97,13 @@ export default function Tv() {
       <div
         className={`${
           isScrolled
-            ? "fixed top-20 left-0 w-full z-40 backdrop-blur-md transition-all duration-300"
+            ? "fixed top-20 left-0 w-full z-40 backdrop-blur-md transition-all shadow-3xl  duration-300"
             : "relative"
         }`}
       >
         <div className="max-w-[1920px] mx-auto px-4">
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-600 rounded-3xl transform rotate-1 scale-105 blur-2xl opacity-80"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl transform rotate-1 scale-105 blur-2xl opacity-90"></div>
             <div className="relative bg-gray-400 rounded-2xl overflow-hidden shadow-2xl drop-shadow-[0_-1px_5px_rgba(0,0,0,0.9)]">
               <video
                 ref={videoRef}
@@ -145,11 +111,8 @@ export default function Tv() {
                 controls
                 autoPlay
                 playsInline
-                onError={() => reloadVideo()}
-                onStalled={() => reloadVideo()}
               >
                 <source src={currentChannel.url} type="application/x-mpegURL" />
-                <source src={currentChannel.mp4Url} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <div className="absolute top-1 left-1 p-2 rounded-lg flex items-center space-x-2">
