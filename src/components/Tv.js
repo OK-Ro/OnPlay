@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react"; // Added useCallback
 import { X, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import ChannelList from "./data";
@@ -11,52 +11,69 @@ export default function Tv() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentChannel, setCurrentChannel] = useState(ChannelList[0]);
-  const [isScrolled, setIsScrolled] = useState(false); // Track scroll state
-  const [isMobile, setIsMobile] = useState(false); // Track if the device is mobile
+  const [isScrolled, setIsScrolled] = useState(false);
   const videoRef = useRef(null);
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.src = currentChannel.url;
+      videoRef.current.load();
       videoRef.current
         .play()
         .catch((error) => console.log("Autoplay prevented:", error));
     }
   }, [currentChannel]);
 
-  // Check if the device is mobile
+  // Add scroll event listener
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768); // 768px is the breakpoint for mobile devices
-    };
-
-    // Check on initial load
-    checkIfMobile();
-
-    // Add resize listener to update on window resize
-    window.addEventListener("resize", checkIfMobile);
-    return () => window.removeEventListener("resize", checkIfMobile);
-  }, []);
-
-  // Add scroll event listener (only for mobile devices)
-  useEffect(() => {
-    if (!isMobile) return; // Exit if not on a mobile device
-
     const handleScroll = () => {
       if (window.scrollY > 50) {
-        setIsScrolled(true); // Enable fixed positioning and blur
+        setIsScrolled(true);
       } else {
-        setIsScrolled(false); // Disable fixed positioning and blur
+        setIsScrolled(false);
       }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isMobile]);
+  }, []);
 
   const handleChannelClick = (channel) => {
     setCurrentChannel(channel);
   };
+
+  // Wrap reloadVideo in useCallback to prevent unnecessary recreations
+  const reloadVideo = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+      videoRef.current
+        .play()
+        .catch((error) => console.log("Autoplay prevented:", error));
+    }
+  }, []); // No dependencies, so it won't change between renders
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      const handleError = () => {
+        console.log("Video playback error, attempting to reload...");
+        reloadVideo();
+      };
+
+      const handleStalled = () => {
+        console.log("Video playback stalled, attempting to reload...");
+        reloadVideo();
+      };
+
+      videoElement.addEventListener("error", handleError);
+      videoElement.addEventListener("stalled", handleStalled);
+
+      return () => {
+        videoElement.removeEventListener("error", handleError);
+        videoElement.removeEventListener("stalled", handleStalled);
+      };
+    }
+  }, [currentChannel, reloadVideo]); // Now reloadVideo is stable
 
   const filteredChannels = ChannelList.filter(
     (channel) =>
@@ -69,7 +86,7 @@ export default function Tv() {
       {/* Header */}
       <header
         className={`${
-          isMobile && isScrolled
+          isScrolled
             ? "fixed top-0 left-0 w-full z-50 bg-gradient-to-br from-[#0b0f19] via-[#1a1c2e] to-[#2d1f3d] backdrop-blur-md shadow-lg transition-all duration-300"
             : "relative"
         }`}
@@ -113,7 +130,7 @@ export default function Tv() {
       {/* Video Player */}
       <div
         className={`${
-          isMobile && isScrolled
+          isScrolled
             ? "fixed top-20 left-0 w-full z-40 backdrop-blur-md transition-all duration-300"
             : "relative"
         }`}
@@ -128,8 +145,11 @@ export default function Tv() {
                 controls
                 autoPlay
                 playsInline
+                onError={() => reloadVideo()}
+                onStalled={() => reloadVideo()}
               >
                 <source src={currentChannel.url} type="application/x-mpegURL" />
+                <source src={currentChannel.mp4Url} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <div className="absolute top-1 left-1 p-2 rounded-lg flex items-center space-x-2">
@@ -155,7 +175,7 @@ export default function Tv() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className={`${
-              isMobile && isScrolled
+              isScrolled
                 ? "fixed top-24 left-0 w-full z-30 backdrop-blur-md transition-all duration-300"
                 : "relative"
             }`}
@@ -177,7 +197,7 @@ export default function Tv() {
       </AnimatePresence>
 
       {/* Channels Section */}
-      <div className={`${isMobile && isScrolled ? "pt-64" : "pt-4"} pb-8 px-4`}>
+      <div className={`${isScrolled ? "pt-64" : "pt-4"} pb-8 px-4`}>
         <section className="max-w-[1920px] mx-auto">
           <h2 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
             Channel Guide
