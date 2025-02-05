@@ -214,7 +214,7 @@ export default function MainEventsSection() {
       </div>
 
       {isVideoOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-100 z-50 flex items-center justify-center p-4">
           <div className="relative w-full max-w-4xl">
             <video
               ref={videoRef}
@@ -229,9 +229,9 @@ export default function MainEventsSection() {
             </video>
             <button
               onClick={handleClosePlayer}
-              className="absolute top-2 right-2 md:top-4 md:right-4 text-white bg-black/50 p-2 rounded-full hover:bg-black/70 transition-colors"
+              className="absolute -top-12 right-0 text-white bg-pink-900 p-2 rounded-full hover:bg-red-900 transition-colors duration-200"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

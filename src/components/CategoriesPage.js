@@ -378,12 +378,12 @@ export default function CategoriesPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-100 z-50 flex items-center justify-center"
+              className="fixed inset-0 bg-black bg-opacity-100 z-50 flex items-center justify-center p-4"
             >
-              <div className="relative w-full max-w-4xl">
+              <div className="relative w-full max-w-4xl shadow-2xl drop-shadow-[0_-1px_5px_rgba(0,0,0,0.9)]">
                 <CustomVideoPlayer src={selectedVideoUrl} />
                 <div className="mt-4 flex justify-between items-center">
-                  <p className="text-white text-center text-sm">
+                  <p className="text-white text-center text-sm hidden">
                     {isIOS
                       ? "Video playback is optimized for iOS devices."
                       : isAndroid
